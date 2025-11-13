@@ -8,15 +8,14 @@ export default function OverviewPage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [newTask, setNewTask] = useState({});
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
 
-  // ✅ Fetch user profile
   const fetchProfile = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
+
     try {
       const res = await API.get("/user/me", {
         headers: { Authorization: `Bearer ${token}` },
@@ -31,7 +30,6 @@ export default function OverviewPage() {
     fetchProfile();
   }, []);
 
-  // ✅ BMI & BMR
   const bmi = useMemo(() => {
     if (!profile?.height || !profile?.weight) return null;
     const h = profile.height / 100;
@@ -39,87 +37,68 @@ export default function OverviewPage() {
   }, [profile]);
 
   const bmiCategory = useMemo(() => {
-    if (!bmi) return { label: "", color: "text-gray-500" };
-    if (bmi < 18.5) return { label: "Underweight 🩻", color: "text-blue-600" };
-    if (bmi < 24.9) return { label: "Normal 💪", color: "text-green-600" };
-    if (bmi < 29.9) return { label: "Overweight ⚠️", color: "text-orange-600" };
-    return { label: "Obese 🚨", color: "text-red-600" };
+    if (!bmi) return { label: "", color: "text-gray-400" };
+    if (bmi < 18.5) return { label: "Underweight 🩻", color: "text-blue-400" };
+    if (bmi < 24.9) return { label: "Normal 💪", color: "text-green-400" };
+    if (bmi < 29.9) return { label: "Overweight ⚠️", color: "text-orange-400" };
+    return { label: "Obese 🚨", color: "text-red-400" };
   }, [bmi]);
 
-  const bmr = useMemo(() => {
-    if (!profile?.height || !profile?.weight || !profile?.age || !profile?.gender)
-      return null;
-    const { weight: w, height: h, age: a, gender } = profile;
-    return gender === "Male"
-      ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * a
-      : 447.593 + 9.247 * w + 3.098 * h - 4.330 * a;
-  }, [profile]);
+  const tasksCompleted = profile?.todayTasks?.filter(t => t.done).length || 0;
+  const totalTasks = profile?.todayTasks?.length || 0;
+  const completionPercent =
+    totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
 
-  // ✅ Calories burned (simulated)
-  const caloriesBurned = useMemo(() => {
-    if (!profile?.workouts) return 0;
-    return profile.workouts.reduce(
-      (acc, workout) => acc + (workout.done ? (workout.points * 10) : 0),
-      0
-    );
-  }, [profile]);
+  const circleRadius = 75;
+  const circumference = 2 * Math.PI * circleRadius;
+  const completionOffset =
+    circumference - (completionPercent / 100) * circumference;
 
-  // ✅ Toggle task done
-  const handleTaskToggle = async (type, index) => {
-    if (!profile) return;
+  const toggleTodayTask = async (index) => {
     try {
       setLoading(true);
+
       await API.put(
-        `/user/tasks/toggle/${type}/${index}`,
+        `/user/tasks/today/${index}`,
         {},
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 2500);
-      await fetchProfile();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // ✅ Add new task
-  const handleAddTask = async (type) => {
-    if (!newTask[type]?.trim()) return;
-    try {
-      setLoading(true);
-      await API.post(
-        `/user/tasks/add/${type}`,
-        { name: newTask[type] },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-      setNewTask((prev) => ({ ...prev, [type]: "" }));
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 2000);
+
       await fetchProfile();
     } catch (err) {
-      console.error(err);
+      console.error("Toggle error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   if (!profile)
-    return <p className="text-center mt-12 text-gray-600">Loading profile...</p>;
-
-  // ✅ Circle progress
-  const circleRadius = 75;
-  const circumference = 2 * Math.PI * circleRadius;
-  const bmiProgress = bmi ? Math.min((bmi / 40) * 100, 100) : 0;
-  const bmiOffset = circumference - (bmiProgress / 100) * circumference;
-  const calProgress = bmr ? Math.min((caloriesBurned / bmr) * 100, 100) : 0;
-  const calOffset = circumference - (calProgress / 100) * circumference;
+    return (
+      <div className="text-center mt-12 text-gray-300">Loading profile...</div>
+    );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white p-6 md:p-10 flex flex-col items-center space-y-10">
+    <div className="relative min-h-screen w-full flex flex-col items-center overflow-hidden bg-black">
+
+      {/* BACKGROUND */}
+      <img
+        src="/overview.png"
+        className="
+          absolute inset-0 w-full h-full
+          object-contain md:object-cover
+          pointer-events-none opacity-80
+        "
+        alt="Overview Background"
+      />
+
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 bg-black/60"></div>
+
       {showConfetti && (
         <Confetti
           width={window.innerWidth}
@@ -128,62 +107,63 @@ export default function OverviewPage() {
         />
       )}
 
-      <h1 className="text-4xl md:text-5xl font-extrabold text-purple-700 text-center">
-        🏆 Fitness Overview
-      </h1>
+      <div className="relative z-20 w-full flex flex-col items-center p-6 md:p-10 space-y-10">
 
-      {profile.email === adminEmail && (
-        <button
-          onClick={() => navigate("/admin")}
-          className="px-6 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-semibold"
+        {/* HEADING */}
+        <h1
+          className="
+            text-4xl md:text-5xl font-extrabold text-center
+            bg-gradient-to-r from-blue-400 via-purple-300 to-pink-400
+            bg-clip-text text-transparent
+          "
+          style={{ textShadow: "0 0 18px rgba(150,100,255,0.4)" }}
         >
-          Admin Panel
-        </button>
-      )}
+          🏆 Fitness Overview
+        </h1>
 
-      {/* ✅ Profile Card */}
-      <div className="bg-white w-full max-w-3xl p-6 md:p-8 rounded-3xl shadow-xl border border-gray-100 flex flex-col md:flex-row items-center justify-around gap-6">
-        <div className="flex flex-col items-center space-y-3">
-          <h2 className="text-3xl font-semibold text-purple-600">
-            {profile.name}
-          </h2>
-          <p className="text-center text-gray-500 text-lg">
-            {profile.goal} | Level {profile.level || 1} | {profile.points} XP | Streak:{" "}
-            {profile.streak || 0} 🔥
-          </p>
-          {bmr && (
-            <p className="text-center text-gray-600 font-medium">
-              🔥 BMR: {bmr.toFixed(0)} kcal/day
+        {/* ADMIN BUTTON */}
+        {profile.email === adminEmail && (
+          <button
+            onClick={() => navigate("/admin")}
+            className="
+              px-6 py-2 bg-red-600 text-white rounded-xl 
+              hover:bg-red-700 transition font-semibold
+            "
+          >
+            Admin Panel
+          </button>
+        )}
+
+        {/* USER CARD */}
+        <div
+          className="
+            w-full max-w-4xl
+            bg-white/10 backdrop-blur-xl
+            border border-purple-500/40
+            rounded-3xl shadow-xl 
+            p-8 flex flex-col md:flex-row items-center justify-around gap-10
+            text-white
+          "
+          style={{ boxShadow: "0 0 20px rgba(120,50,255,0.25)" }}
+        >
+          <div className="flex flex-col items-center space-y-3">
+            <h2 className="text-3xl font-bold text-purple-300">{profile.name}</h2>
+
+            <p className="text-center text-gray-300 text-lg">
+              {profile.goal} | Level {profile.level} | {profile.points} XP | Streak:{" "}
+              {profile.streak} 🔥
             </p>
-          )}
-
-          {/* ✅ Buttons */}
-          <div className="flex gap-3 mt-3">
-            <button
-              onClick={() => navigate("/suggest-workouts")}
-              className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-            >
-              💪 Suggested Workouts
-            </button>
-            <button
-              onClick={() => navigate("/suggest-meals")}
-              className="px-5 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition"
-            >
-              🍽️ Suggested Meals
-            </button>
           </div>
-        </div>
 
-        {/* ✅ Circles */}
-        <div className="flex gap-8">
-          {bmi && (
+          <div className="flex gap-10">
+            {/* BMI Circle */}
             <div className="relative w-[160px] h-[160px] flex items-center justify-center">
               <svg width={160} height={160} className="transform -rotate-90">
                 <circle
                   cx="80"
                   cy="80"
                   r={circleRadius}
-                  stroke="#e5e7eb"
+                  stroke="rgba(255,255,255,0.15)"
                   strokeWidth="15"
                   fill="transparent"
                 />
@@ -197,25 +177,27 @@ export default function OverviewPage() {
                   strokeDasharray={circumference}
                   strokeDashoffset={circumference}
                   strokeLinecap="round"
-                  animate={{ strokeDashoffset: bmiOffset }}
+                  animate={{
+                    strokeDashoffset:
+                      circumference - (bmi / 40) * circumference,
+                  }}
                   transition={{ duration: 1.5 }}
                 />
               </svg>
               <div className="absolute text-center">
-                <p className={`font-bold text-lg ${bmiCategory.color}`}>{bmi}</p>
-                <p className="text-sm text-gray-500">{bmiCategory.label}</p>
+                <p className={`font-bold text-xl ${bmiCategory.color}`}>{bmi}</p>
+                <p className="text-gray-300 text-sm">{bmiCategory.label}</p>
               </div>
             </div>
-          )}
 
-          {bmr && (
+            {/* Tasks Progress Circle */}
             <div className="relative w-[160px] h-[160px] flex items-center justify-center">
               <svg width={160} height={160} className="transform -rotate-90">
                 <circle
                   cx="80"
                   cy="80"
                   r={circleRadius}
-                  stroke="#e5e7eb"
+                  stroke="rgba(255,255,255,0.15)"
                   strokeWidth="15"
                   fill="transparent"
                 />
@@ -223,90 +205,115 @@ export default function OverviewPage() {
                   cx="80"
                   cy="80"
                   r={circleRadius}
-                  stroke="#f59e0b"
+                  stroke="#22c55e"
                   strokeWidth="15"
                   fill="transparent"
                   strokeDasharray={circumference}
-                  strokeDashoffset={circumference}
+                  strokeDashoffset={completionOffset}
                   strokeLinecap="round"
-                  animate={{ strokeDashoffset: calOffset }}
+                  animate={{ strokeDashoffset: completionOffset }}
                   transition={{ duration: 1.5 }}
                 />
               </svg>
               <div className="absolute text-center">
-                <p className="font-bold text-lg text-yellow-600">
-                  {caloriesBurned}
+                <p className="font-bold text-xl text-green-400">
+                  {completionPercent}%
                 </p>
-                <p className="text-sm text-gray-500">Calories Burned</p>
+                <p className="text-gray-300 text-sm">Tasks Done</p>
               </div>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* ✅ Tasks Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
-        {["dailyTasks", "workouts", "meals", "meditations"].map((type) => (
-          <div
-            key={type}
-            className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100 flex flex-col"
-          >
-            <h3 className="text-xl font-semibold text-purple-600 mb-3 text-center capitalize">
-              {type.replace(/([A-Z])/g, " $1")}
-            </h3>
-
-            <ul className="space-y-3 flex-1 overflow-y-auto max-h-64">
-              <AnimatePresence>
-                {profile[type]?.map((task, index) => (
-                  <motion.li
-                    key={index}
-                    layout
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-purple-50 transition-colors"
-                  >
-                    <span
-                      className={
-                        task.done
-                          ? "line-through text-gray-400 font-medium"
-                          : "text-gray-700 font-medium"
-                      }
-                    >
-                      {task.name || task.task}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={task.done}
-                      onChange={() => handleTaskToggle(type, index)}
-                      disabled={loading}
-                      className="w-5 h-5 accent-purple-600"
-                    />
-                  </motion.li>
-                ))}
-              </AnimatePresence>
-            </ul>
-
-            {/* Add new task */}
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                placeholder={`Add new ${type.slice(0, -1)}`}
-                className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
-                value={newTask[type] || ""}
-                onChange={(e) =>
-                  setNewTask((prev) => ({ ...prev, [type]: e.target.value }))
-                }
-              />
-              <button
-                onClick={() => handleAddTask(type)}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-              >
-                +
-              </button>
-            </div>
           </div>
-        ))}
+        </div>
+
+        {/* BUTTONS */}
+        <div className="flex gap-6 mt-2">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/suggest-meals")}
+            className="
+              px-10 py-4 
+              bg-gradient-to-r from-purple-500 to-purple-600
+              text-white rounded-3xl shadow-lg
+              hover:shadow-purple-500/40 transition-all
+              text-lg font-semibold
+            "
+          >
+            🍽️ Meals
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/suggest-workouts")}
+            className="
+              px-10 py-4 
+              bg-gradient-to-r from-blue-500 to-blue-700
+              text-white rounded-3xl shadow-lg
+              hover:shadow-blue-500/40 transition-all
+              text-lg font-semibold
+            "
+          >
+            🏋️ Workouts
+          </motion.button>
+        </div>
+
+        {/* DAILY TASKS */}
+        <div
+          className="
+            w-full max-w-3xl 
+            bg-white/10 backdrop-blur-xl
+            border border-purple-400/30
+            rounded-3xl shadow-xl p-6
+            text-white
+          "
+          style={{ boxShadow: "0 0 14px rgba(150,80,255,0.25)" }}
+        >
+          <h3 className="text-2xl font-bold text-purple-300 mb-4 text-center">
+            ✅ Today's Daily Tasks
+          </h3>
+
+          <ul className="space-y-3">
+            <AnimatePresence>
+              {profile.todayTasks?.map((task, index) => (
+                <motion.li
+                  key={index}
+                  layout
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="
+                    flex items-center justify-between 
+                    p-3 rounded-xl border border-gray-700/40
+                    hover:bg-purple-900/10 transition
+                  "
+                >
+                  <span
+                    className={
+                      task.done
+                        ? "line-through text-gray-400 font-medium"
+                        : "text-gray-200 font-medium"
+                    }
+                  >
+                    {task.name}
+                  </span>
+
+                  <input
+                    type="checkbox"
+                    checked={task.done}
+                    onChange={() => toggleTodayTask(index)}
+                    disabled={loading}
+                    className="w-5 h-5 accent-purple-500"
+                  />
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </ul>
+
+          <p className="text-xs text-center text-gray-400 mt-3">
+            Tasks refresh every 24 hours automatically.
+          </p>
+        </div>
       </div>
     </div>
   );

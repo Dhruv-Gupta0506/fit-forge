@@ -8,9 +8,8 @@ export default function AdminPanel() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await API.get("/admin/users", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      // ✅ No need for headers — cookie handles auth
+      const res = await API.get("/admin/users");
       setUsers(res.data);
     } catch (err) {
       console.error(err);
@@ -31,9 +30,8 @@ export default function AdminPanel() {
 
   const handleSave = async (user) => {
     try {
-      await API.put(`/admin/users/${user._id}`, user, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      // ✅ Cookie still authenticates automatically
+      await API.put(`/admin/users/${user._id}`, user);
       alert("User updated!");
       fetchUsers();
     } catch (err) {
@@ -69,7 +67,9 @@ export default function AdminPanel() {
                   <input
                     type="number"
                     value={user.points}
-                    onChange={(e) => handleChange(user._id, "points", Number(e.target.value))}
+                    onChange={(e) =>
+                      handleChange(user._id, "points", Number(e.target.value))
+                    }
                     className="border p-1 rounded w-20"
                   />
                 </td>
@@ -77,7 +77,9 @@ export default function AdminPanel() {
                   <input
                     type="number"
                     value={user.streak}
-                    onChange={(e) => handleChange(user._id, "streak", Number(e.target.value))}
+                    onChange={(e) =>
+                      handleChange(user._id, "streak", Number(e.target.value))
+                    }
                     className="border p-1 rounded w-16"
                   />
                 </td>
@@ -85,7 +87,9 @@ export default function AdminPanel() {
                   <input
                     type="text"
                     value={user.title}
-                    onChange={(e) => handleChange(user._id, "title", e.target.value)}
+                    onChange={(e) =>
+                      handleChange(user._id, "title", e.target.value)
+                    }
                     className="border p-1 rounded w-28"
                   />
                 </td>

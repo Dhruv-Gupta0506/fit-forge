@@ -1,0 +1,22 @@
+module.exports = [
+  "Drink 3L of water",
+  "Walk 10 minutes",
+  "Do 20 pushups",
+  "Eat 1 fruit",
+  "Meditate for 5 minutes",
+  "Avoid sugar today",
+  "Take stairs instead of lift",
+  "Stretch for 5 minutes",
+  "Eat a high protein meal",
+  "No junk food today",
+  "Track calories for 1 meal",
+  "Do 30 jumping jacks",
+  "Do 15 squats",
+  "Sleep 7+ hours today",
+  "Practice deep breathing 2 mins",
+  "Have a balanced breakfast",
+  "Avoid cold drinks today",
+  "Eat one bowl of salad",
+  "Take 5 minutes sunlight",
+  "Maintain good posture for 10 min"
+];

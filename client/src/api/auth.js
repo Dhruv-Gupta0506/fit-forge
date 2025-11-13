@@ -1,3 +1,4 @@
+// src/api/auth.js
 import API from "./axios";
 
 // Register user
@@ -8,8 +9,11 @@ export const registerUser = async (data) => {
       email: data.email,
       password: data.password,
     });
+
     console.log("✅ Register response:", res.data);
-    return res.data; // { message, user, token }
+
+    // res.data includes: { message, email, userId }
+    return res.data;
   } catch (err) {
     console.error("❌ Register error:", err.response?.data || err.message);
     return { error: err.response?.data?.message || "Registration failed" };
@@ -23,10 +27,13 @@ export const loginUser = async (data) => {
       email: data.email,
       password: data.password,
     });
+
     console.log("✅ Login response:", res.data);
     return res.data; // { message, user, token }
   } catch (err) {
     console.error("❌ Login error:", err.response?.data || err.message);
+
+    // return exact backend message (important for OTP redirect)
     return { error: err.response?.data?.message || "Login failed" };
   }
 };

@@ -4,11 +4,13 @@ import { useNavigate, Link } from "react-router-dom";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,56 +18,152 @@ export default function RegisterPage() {
     setError("");
 
     const res = await registerUser(form);
-    if (res.error) setError(res.error);
-    else {
-      alert("✅ Registration successful! Please login.");
-      navigate("/login");
+
+    if (res.error) {
+      setError(res.error);
+    } else {
+      alert("OTP sent to your email. Please verify.");
+      navigate("/verify-otp", { state: { email: form.email } });
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-md w-96 space-y-4">
-        <h2 className="text-2xl font-bold text-center text-blue-600">Register</h2>
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+    <div className="relative min-h-screen w-full bg-black overflow-hidden flex items-center justify-center">
+
+      {/* BACKGROUND IMAGE */}
+      <img
+        src="/register.png"
+        alt="FitForge Register Background"
+        className="
+          absolute inset-0 w-full h-full 
+          object-cover object-center 
+          opacity-70
+          pointer-events-none
+        "
+      />
+
+      {/* DARK OVERLAY FOR READABILITY */}
+      <div className="absolute inset-0 bg-black/60"></div>
+
+      {/* REGISTER FORM */}
+      <form
+        onSubmit={handleSubmit}
+        className="
+          relative z-20 
+          w-full max-w-sm 
+          p-10 
+          rounded-3xl 
+          bg-white/10 backdrop-blur-xl
+          border border-blue-500/40
+          text-white
+          shadow-[0_0_20px_rgba(0,0,0,0.4)]
+        "
+        style={{
+          boxShadow: "0 0 0 1px rgba(59,130,246,0.25)",
+        }}
+      >
+        {/* Header */}
+        <h2
+          className="
+            text-4xl font-extrabold 
+            text-center mb-8
+            tracking-wide
+          "
+          style={{
+            textShadow: "0 0 6px rgba(0,150,255,0.3)",
+          }}
+        >
+          Create Account
+        </h2>
+
+        {error && (
+          <p className="text-red-400 text-sm text-center bg-red-900/40 p-2 rounded-lg mb-5 border border-red-700/40">
+            {error}
+          </p>
+        )}
+
+        {/* NAME */}
+        <label className="text-gray-300 text-sm">Full Name</label>
         <input
           name="name"
-          placeholder="Full Name"
-          className="w-full p-3 border rounded-lg"
+          placeholder="Enter your full name"
           value={form.name}
           onChange={handleChange}
-          autoComplete="name"
+          className="
+            w-full p-3 mt-1 mb-5 rounded-xl 
+            bg-black/40 border border-gray-600 
+            text-white 
+            focus:border-blue-400 focus:ring-2 focus:ring-blue-500 
+            outline-none transition
+          "
         />
+
+        {/* EMAIL */}
+        <label className="text-gray-300 text-sm">Email</label>
         <input
           name="email"
           type="email"
-          placeholder="Email"
-          className="w-full p-3 border rounded-lg"
+          placeholder="Enter your email"
           value={form.email}
           onChange={handleChange}
-          autoComplete="email"
+          className="
+            w-full p-3 mt-1 mb-5 rounded-xl 
+            bg-black/40 border border-gray-600 
+            text-white 
+            focus:border-blue-400 focus:ring-2 focus:ring-blue-500 
+            outline-none transition
+          "
         />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          className="w-full p-3 border rounded-lg"
-          value={form.password}
-          onChange={handleChange}
-          autoComplete="new-password"
-        />
+
+        {/* PASSWORD */}
+        <label className="text-gray-300 text-sm">Password</label>
+        <div className="relative mb-5">
+          <input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Create a password"
+            value={form.password}
+            onChange={handleChange}
+            className="
+              w-full p-3 mt-1 rounded-xl 
+              bg-black/40 border border-gray-600 
+              text-white 
+              focus:border-blue-400 focus:ring-2 focus:ring-blue-500 
+              outline-none transition
+            "
+          />
+          <span
+            className="
+              absolute right-4 top-1/2 -translate-y-1/2 
+              cursor-pointer text-gray-400 hover:text-white
+            "
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? "🙈" : "👁️"}
+          </span>
+        </div>
+
+        {/* SUBMIT */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="
+            w-full py-3 rounded-xl 
+            bg-gradient-to-r from-blue-600 to-blue-800
+            hover:from-blue-500 hover:to-blue-700
+            text-white font-semibold 
+            active:scale-95 transition
+          "
         >
           {loading ? "Registering..." : "Register"}
         </button>
-        <p className="text-center text-sm">
+
+        {/* LINK */}
+        <p className="text-center text-sm text-gray-300 mt-6">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="text-blue-400 hover:underline">
             Login
           </Link>
         </p>

@@ -1,50 +1,61 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const aiRoutes = require('./routes/aiSuggestions');
-
-
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
-// ------------------- MIDDLEWARE -------------------
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true, // allow cookies to be sent
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  })
+);
 
-// ------------------- MONGO CONNECTION -------------------
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('✅ MongoDB Connected Successfully'))
-.catch((err) => {
-  console.error('❌ MongoDB Connection Error:', err);
-  process.exit(1); // stop server if DB fails
-});
+// Mongo Connection
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch((err) => {
+    console.error("❌ MongoDB Connection Error:", err);
+    process.exit(1);
+  });
 
-// ------------------- TEST ROUTE -------------------
-app.get('/', (req, res) => res.send('🔥 Backend running!'));
+// --- Default Route ---
+app.get("/", (req, res) => res.send("🔥 Backend running!"));
 
-// ------------------- ROUTES -------------------
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/user');
-const adminRoutes = require('./routes/admin');
-const progressRoutes = require('./routes/progress'); // optional
-const tasksRoutes = require('./routes/tasks'); // new tasks route
+// --- ROUTES ---
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/user");
+const adminRoutes = require("./routes/admin");
+const progressRoutes = require("./routes/progress");
+const tasksRoutes = require("./routes/tasks");
+const mealsRoutes = require("./routes/meals.routes");
 
-app.use('/api/auth', authRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/progress', progressRoutes); // optional
-app.use('/api/tasks', tasksRoutes); // added tasks route
+// 🔥 These two are IMPORTANT
+const aiRoutes = require("./routes/aiRoutes");              // POST /chat (Gemini)
+const aiSuggestions = require("./routes/aiSuggestions");    // GET /workouts (your workout generator)
 
-// ------------------- START SERVER -------------------
+// --- USE ROUTES ---
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/progress", progressRoutes);
+app.use("/api/tasks", tasksRoutes);
+app.use("/api/meals", mealsRoutes);
+
+// 🔥 MOUNT BOTH AI ROUTES UNDER /api/ai
+app.use("/api/ai", aiRoutes);        // /chat → works
+app.use("/api/ai", aiSuggestions);   // /workouts → now works
+
+// --- START SERVER ---
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on http://localhost:${PORT}`)
+);
