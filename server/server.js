@@ -6,25 +6,25 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-// Required for cookies behind Render proxies
+// Required so cookies work on Render (proxy)
 app.set("trust proxy", 1);
 
 app.use(express.json());
 app.use(cookieParser());
 
 // -------------------------------------------------------------
-// ⭐ UPDATED CORS — ALLOW BOTH VERCEL DOMAINS
+// ⭐ CORS CONFIG — ALLOW BOTH VERCEL DOMAINS
 // -------------------------------------------------------------
 const allowedOrigins = [
   process.env.CLIENT_URL?.trim(),   // main vercel domain
-  process.env.CLIENT_URL1?.trim(),  // backup vercel domain
+  process.env.CLIENT_URL1?.trim(),  // deployment/preview domain
   "http://localhost:5173"
-];
+].filter(Boolean); // remove null/undefined
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow Postman etc.
+      if (!origin) return callback(null, true); // allow Postman, server-side
 
       const cleanOrigin = origin.trim();
 
@@ -33,7 +33,7 @@ app.use(
       }
 
       console.log("⛔ BLOCKED ORIGIN:", cleanOrigin);
-      return callback(new Error("Not allowed by CORS"));
+      callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
@@ -84,4 +84,5 @@ app.use("/api/ai", aiSuggestions);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🌐 Allowed Origins:", allowedOrigins);
 });
