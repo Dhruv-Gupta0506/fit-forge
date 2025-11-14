@@ -10,6 +10,9 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const JWT_EXPIRES = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+// 🔥 Detect if running on Render production
+const isProduction = process.env.NODE_ENV === "production";
+
 // -------------------- OTP HELPERS --------------------
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -96,19 +99,15 @@ router.post('/verify-otp', async (req, res) => {
     user.otpExpiresAt = undefined;
     await user.save();
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d"
+    });
 
-    // ---------------------------
-    // ✅ Correct cookie for localhost
-    // ---------------------------
+    // ✅ FIXED COOKIE (works on both local + production)
     res.cookie("accessToken", token, {
       httpOnly: true,
-      secure: false,     // MUST be false on localhost
-      sameSite: "Lax",   // MUST be Lax on localhost
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: JWT_EXPIRES,
       path: "/",
     });
@@ -140,19 +139,15 @@ router.post('/login', async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d"
+    });
 
-    // ---------------------------
-    // ✅ Correct cookie for localhost
-    // ---------------------------
+    // ✅ FIXED COOKIE (this is the MAIN FIX)
     res.cookie("accessToken", token, {
       httpOnly: true,
-      secure: false,     // localhost
-      sameSite: "Lax",   // localhost
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: JWT_EXPIRES,
       path: "/",
     });
