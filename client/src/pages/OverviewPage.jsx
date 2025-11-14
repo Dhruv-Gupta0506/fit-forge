@@ -13,13 +13,8 @@ export default function OverviewPage() {
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
 
   const fetchProfile = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     try {
-      const res = await API.get("/user/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await API.get("/user/me"); // 🔥 cookie-based
       setProfile(res.data);
     } catch (err) {
       console.error("❌ Error fetching profile:", err);
@@ -49,22 +44,16 @@ export default function OverviewPage() {
   const completionPercent =
     totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
 
-  const circleRadius = 75;
-  const circumference = 2 * Math.PI * circleRadius;
-  const completionOffset =
-    circumference - (completionPercent / 100) * circumference;
+  const radius = 65;
+  const stroke = 12;
+  const size = radius * 2 + stroke * 2;
+  const circumference = 2 * Math.PI * radius;
 
   const toggleTodayTask = async (index) => {
     try {
       setLoading(true);
 
-      await API.put(
-        `/user/tasks/today/${index}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
+      await API.put(`/user/tasks/today/${index}`); // 🔥 cookie-based
 
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
@@ -85,7 +74,6 @@ export default function OverviewPage() {
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center overflow-hidden bg-black">
 
-      {/* BACKGROUND */}
       <img
         src="/overview.png"
         className="
@@ -96,39 +84,29 @@ export default function OverviewPage() {
         alt="Overview Background"
       />
 
-      {/* DARK OVERLAY */}
       <div className="absolute inset-0 bg-black/60"></div>
 
       {showConfetti && (
-        <Confetti
-          width={window.innerWidth}
-          height={window.innerHeight}
-          recycle={false}
-        />
+        <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} />
       )}
 
-      <div className="relative z-20 w-full flex flex-col items-center p-6 md:p-10 space-y-10">
+      <div className="relative z-20 w-full flex flex-col items-center px-4 sm:px-6 md:px-10 py-6 md:py-10 space-y-10">
 
-        {/* HEADING */}
         <h1
           className="
-            text-4xl md:text-5xl font-extrabold text-center
+            text-3xl sm:text-4xl md:text-5xl font-extrabold text-center
             bg-gradient-to-r from-blue-400 via-purple-300 to-pink-400
-            bg-clip-text text-transparent
+            bg-clip-text text-transparent px-2
           "
           style={{ textShadow: "0 0 18px rgba(150,100,255,0.4)" }}
         >
           🏆 Fitness Overview
         </h1>
 
-        {/* ADMIN BUTTON */}
         {profile.email === adminEmail && (
           <button
             onClick={() => navigate("/admin")}
-            className="
-              px-6 py-2 bg-red-600 text-white rounded-xl 
-              hover:bg-red-700 transition font-semibold
-            "
+            className="px-5 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-semibold"
           >
             Admin Panel
           </button>
@@ -137,106 +115,144 @@ export default function OverviewPage() {
         {/* USER CARD */}
         <div
           className="
-            w-full max-w-4xl
-            bg-white/10 backdrop-blur-xl
-            border border-purple-500/40
-            rounded-3xl shadow-xl 
-            p-8 flex flex-col md:flex-row items-center justify-around gap-10
+            w-full max-w-5xl bg-white/10 backdrop-blur-xl
+            border border-purple-500/40 rounded-3xl shadow-xl 
+            p-6 sm:p-8 md:p-10
+            flex flex-col md:flex-row items-center justify-around gap-10 md:gap-14
             text-white
           "
-          style={{ boxShadow: "0 0 20px rgba(120,50,255,0.25)" }}
+          style={{ boxShadow: "0 0 24px rgba(120,50,255,0.25)" }}
         >
-          <div className="flex flex-col items-center space-y-3">
-            <h2 className="text-3xl font-bold text-purple-300">{profile.name}</h2>
-
-            <p className="text-center text-gray-300 text-lg">
-              {profile.goal} | Level {profile.level} | {profile.points} XP | Streak:{" "}
-              {profile.streak} 🔥
+          <div className="flex flex-col items-center space-y-3 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-purple-300">
+              {profile.name}
+            </h2>
+            <p className="text-gray-300 text-base sm:text-lg">
+              {profile.goal} | Level {profile.level} | {profile.points} XP | Streak: {profile.streak} 🔥
             </p>
           </div>
 
-          <div className="flex gap-10">
-            {/* BMI Circle */}
-            <div className="relative w-[160px] h-[160px] flex items-center justify-center">
-              <svg width={160} height={160} className="transform -rotate-90">
+          {/* CIRCLES */}
+          <div className="flex flex-col sm:flex-row gap-10 sm:gap-14">
+
+            {/* BMI CIRCLE */}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="relative flex items-center justify-center"
+              style={{ width: size, height: size }}
+            >
+              <div className="absolute w-full h-full rounded-full blur-2xl bg-purple-500/20 animate-pulse"></div>
+
+              <div className="absolute w-[115%] h-[115%] rounded-full animate-spin-slow bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 opacity-30"></div>
+
+              <svg width={size} height={size} className="transform -rotate-90 relative z-10">
                 <circle
-                  cx="80"
-                  cy="80"
-                  r={circleRadius}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
                   stroke="rgba(255,255,255,0.15)"
-                  strokeWidth="15"
+                  strokeWidth={stroke}
                   fill="transparent"
                 />
                 <motion.circle
-                  cx="80"
-                  cy="80"
-                  r={circleRadius}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
                   stroke="#a855f7"
-                  strokeWidth="15"
+                  strokeWidth={stroke}
                   fill="transparent"
                   strokeDasharray={circumference}
-                  strokeDashoffset={circumference}
                   strokeLinecap="round"
                   animate={{
                     strokeDashoffset:
                       circumference - (bmi / 40) * circumference,
                   }}
-                  transition={{ duration: 1.5 }}
+                  transition={{ duration: 1.8, ease: "easeOut" }}
                 />
               </svg>
-              <div className="absolute text-center">
-                <p className={`font-bold text-xl ${bmiCategory.color}`}>{bmi}</p>
-                <p className="text-gray-300 text-sm">{bmiCategory.label}</p>
-              </div>
-            </div>
 
-            {/* Tasks Progress Circle */}
-            <div className="relative w-[160px] h-[160px] flex items-center justify-center">
-              <svg width={160} height={160} className="transform -rotate-90">
+              <motion.div
+                className="absolute text-center z-20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
+                <motion.p
+                  className={`font-bold text-xl ${bmiCategory.color}`}
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                >
+                  {bmi}
+                </motion.p>
+                <p className="text-gray-300 text-sm">{bmiCategory.label}</p>
+              </motion.div>
+            </motion.div>
+
+            {/* TASKS CIRCLE */}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="relative flex items-center justify-center"
+              style={{ width: size, height: size }}
+            >
+              <div className="absolute w-full h-full rounded-full blur-2xl bg-green-500/20 animate-pulse"></div>
+
+              <div className="absolute w-[115%] h-[115%] rounded-full animate-spin-slow bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 opacity-30"></div>
+
+              <svg width={size} height={size} className="transform -rotate-90 relative z-10">
                 <circle
-                  cx="80"
-                  cy="80"
-                  r={circleRadius}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
                   stroke="rgba(255,255,255,0.15)"
-                  strokeWidth="15"
+                  strokeWidth={stroke}
                   fill="transparent"
                 />
                 <motion.circle
-                  cx="80"
-                  cy="80"
-                  r={circleRadius}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
                   stroke="#22c55e"
-                  strokeWidth="15"
+                  strokeWidth={stroke}
                   fill="transparent"
                   strokeDasharray={circumference}
-                  strokeDashoffset={completionOffset}
                   strokeLinecap="round"
-                  animate={{ strokeDashoffset: completionOffset }}
-                  transition={{ duration: 1.5 }}
+                  animate={{
+                    strokeDashoffset:
+                      circumference - (completionPercent / 100) * circumference,
+                  }}
+                  transition={{ duration: 1.8, ease: "easeOut" }}
                 />
               </svg>
-              <div className="absolute text-center">
-                <p className="font-bold text-xl text-green-400">
+
+              <motion.div
+                className="absolute text-center z-20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
+                <motion.p
+                  className="font-bold text-xl text-green-400"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                >
                   {completionPercent}%
-                </p>
+                </motion.p>
                 <p className="text-gray-300 text-sm">Tasks Done</p>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
 
         {/* BUTTONS */}
-        <div className="flex gap-6 mt-2">
+        <div className="flex flex-col sm:flex-row gap-6">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/suggest-meals")}
             className="
-              px-10 py-4 
-              bg-gradient-to-r from-purple-500 to-purple-600
+              px-10 py-4 bg-gradient-to-r from-purple-500 to-purple-600
               text-white rounded-3xl shadow-lg
-              hover:shadow-purple-500/40 transition-all
-              text-lg font-semibold
+              hover:shadow-purple-500/40 transition-all text-lg font-semibold
             "
           >
             🍽️ Meals
@@ -247,30 +263,26 @@ export default function OverviewPage() {
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate("/suggest-workouts")}
             className="
-              px-10 py-4 
-              bg-gradient-to-r from-blue-500 to-blue-700
+              px-10 py-4 bg-gradient-to-r from-blue-500 to-blue-700
               text-white rounded-3xl shadow-lg
-              hover:shadow-blue-500/40 transition-all
-              text-lg font-semibold
+              hover:shadow-blue-500/40 transition-all text-lg font-semibold
             "
           >
             🏋️ Workouts
           </motion.button>
         </div>
 
-        {/* DAILY TASKS */}
+        {/* TASKS LIST */}
         <div
           className="
-            w-full max-w-3xl 
-            bg-white/10 backdrop-blur-xl
-            border border-purple-400/30
-            rounded-3xl shadow-xl p-6
-            text-white
+            w-full max-w-3xl bg-white/10 backdrop-blur-xl 
+            border border-purple-400/30 rounded-3xl shadow-xl 
+            p-6 sm:p-8 text-white
           "
           style={{ boxShadow: "0 0 14px rgba(150,80,255,0.25)" }}
         >
-          <h3 className="text-2xl font-bold text-purple-300 mb-4 text-center">
-            ✅ Today's Daily Tasks
+          <h3 className="text-xl sm:text-2xl font-bold text-purple-300 mb-4 text-center">
+            ✅ Today&apos;s Daily Tasks
           </h3>
 
           <ul className="space-y-3">
@@ -284,15 +296,15 @@ export default function OverviewPage() {
                   exit={{ opacity: 0, y: 10 }}
                   className="
                     flex items-center justify-between 
-                    p-3 rounded-xl border border-gray-700/40
+                    p-3 sm:p-4 rounded-xl border border-gray-700/40
                     hover:bg-purple-900/10 transition
                   "
                 >
                   <span
                     className={
                       task.done
-                        ? "line-through text-gray-400 font-medium"
-                        : "text-gray-200 font-medium"
+                        ? "line-through text-gray-400 font-medium text-sm sm:text-base"
+                        : "text-gray-200 font-medium text-sm sm:text-base"
                     }
                   >
                     {task.name}
@@ -315,6 +327,16 @@ export default function OverviewPage() {
           </p>
         </div>
       </div>
+
+      <style>{`
+        .animate-spin-slow {
+          animation: spin 6s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

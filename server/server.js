@@ -6,6 +6,9 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
+// 🔥 REQUIRED FOR COOKIES TO WORK PROPERLY (Chrome + secure/sameSite=None)
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -39,8 +42,8 @@ const tasksRoutes = require("./routes/tasks");
 const mealsRoutes = require("./routes/meals.routes");
 
 // 🔥 These two are IMPORTANT
-const aiRoutes = require("./routes/aiRoutes");              // POST /chat (Gemini)
-const aiSuggestions = require("./routes/aiSuggestions");    // GET /workouts (your workout generator)
+const aiRoutes = require("./routes/aiRoutes");
+const aiSuggestions = require("./routes/aiSuggestions");
 
 // --- USE ROUTES ---
 app.use("/api/auth", authRoutes);
@@ -51,8 +54,8 @@ app.use("/api/tasks", tasksRoutes);
 app.use("/api/meals", mealsRoutes);
 
 // 🔥 MOUNT BOTH AI ROUTES UNDER /api/ai
-app.use("/api/ai", aiRoutes);        // /chat → works
-app.use("/api/ai", aiSuggestions);   // /workouts → now works
+app.use("/api/ai", aiRoutes);
+app.use("/api/ai", aiSuggestions);
 
 // --- START SERVER ---
 const PORT = process.env.PORT || 5000;

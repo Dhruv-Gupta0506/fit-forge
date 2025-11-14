@@ -9,10 +9,8 @@ const LEVELS = ["beginner", "intermediate", "advanced"];
 const GENDERS = ["Male", "Female", "Other"];
 const LOCATIONS = ["Gym", "Home"];
 
-// Map XP level → beginner/intermediate/advanced
 function mapUserLevel(xpLevel) {
   if (!xpLevel) return "beginner";
-
   if (xpLevel <= 3) return "beginner";
   if (xpLevel <= 6) return "intermediate";
   return "advanced";
@@ -29,7 +27,6 @@ export default function WorkoutsPage() {
   const [goal, setGoal] = useState("Maintenance");
   const [level, setLevel] = useState("intermediate");
   const [gender, setGender] = useState("Other");
-
   const [days, setDays] = useState(3);
 
   const navigate = useNavigate();
@@ -48,7 +45,6 @@ export default function WorkoutsPage() {
     }
   });
 
-  // Save completion state
   useEffect(() => {
     localStorage.setItem(
       `plan_complete_${planSignature}`,
@@ -56,28 +52,23 @@ export default function WorkoutsPage() {
     );
   }, [completed, planSignature]);
 
-  // Load Profile + Fix Level Mapping
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
 
+        const token = localStorage.getItem("token");
         const res = await API.get("/user/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         setProfile(res.data);
 
-        // Fix level mapping here
-        if (res.data.level) {
-          const mapped = mapUserLevel(res.data.level);
-          setLevel(mapped);
-        }
-
+        if (res.data.level) setLevel(mapUserLevel(res.data.level));
         if (res.data.goal) setGoal(res.data.goal);
         if (res.data.gender) setGender(res.data.gender);
-        if (res.data.workoutLocation) setLocation(res.data.workoutLocation);
+        if (res.data.workoutLocation)
+          setLocation(res.data.workoutLocation);
 
       } catch (err) {
         console.error("Could not fetch profile:", err);
@@ -90,7 +81,6 @@ export default function WorkoutsPage() {
     fetchProfile();
   }, []);
 
-  // Fetch workouts
   const fetchWorkouts = async () => {
     setError("");
     setLoading(true);
@@ -121,7 +111,6 @@ export default function WorkoutsPage() {
     }
   };
 
-  // Fetch workouts once profile loads
   useEffect(() => {
     if (profile !== null) fetchWorkouts();
   }, [profile]);
@@ -144,127 +133,200 @@ export default function WorkoutsPage() {
   };
 
   return (
-    <div className="min-h-screen px-6 py-8 bg-gray-50">
-      <div className="max-w-4xl mx-auto bg-white p-6 shadow-lg rounded-xl">
-        <h2 className="text-2xl font-bold mb-4">Advanced Workout Planner</h2>
+    <div className="relative min-h-screen w-full overflow-hidden flex justify-center bg-black">
 
-        {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      {/* BACKGROUND IMAGE */}
+      <img
+        src="/workout.png"
+        className="
+          absolute inset-0 w-full h-full 
+          object-contain md:object-cover
+          opacity-90 pointer-events-none
+        "
+      />
+
+      {/* OVERLAY */}
+      <div className="absolute inset-0 bg-black/60"></div>
+
+      {/* MAIN CONTENT */}
+      <div
+        className="
+          relative z-20 w-full max-w-5xl 
+          bg-white/10 backdrop-blur-xl
+          border border-purple-500/40 
+          shadow-[0_0_25px_rgba(140,0,255,0.35)]
+          rounded-3xl p-6 sm:p-10 my-10
+        "
+      >
+        {/* HEADING */}
+        <h1
+          className="text-center text-4xl font-extrabold text-white mb-10"
+          style={{ textShadow: "0 0 15px rgba(150,0,255,0.7)" }}
+        >
+          🏋️ Personalized Workout Plan
+        </h1>
+
+        {/* FILTERS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
 
           {/* GOAL */}
           <div>
-            <label className="text-sm text-gray-600">Goal</label>
+            <label className="text-sm text-purple-300">Goal</label>
             <select
-              className="mt-1 w-full border rounded px-2 py-1"
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
+              className="
+                mt-1 w-full p-3 rounded-xl
+                bg-black/40 text-white 
+                border border-purple-500/30
+                focus:border-purple-400 outline-none
+              "
             >
-              {GOALS.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
+              {GOALS.map((g) => <option key={g}>{g}</option>)}
             </select>
           </div>
 
           {/* LEVEL */}
           <div>
-            <label className="text-sm text-gray-600">Level</label>
+            <label className="text-sm text-purple-300">Level</label>
             <select
-              className="mt-1 w-full border rounded px-2 py-1"
               value={level}
               onChange={(e) => setLevel(e.target.value)}
+              className="
+                mt-1 w-full p-3 rounded-xl
+                bg-black/40 text-white 
+                border border-purple-500/30
+                focus:border-purple-400 outline-none
+              "
             >
-              {LEVELS.map((l) => (
-                <option key={l} value={l}>{l}</option>
-              ))}
+              {LEVELS.map((l) => <option key={l}>{l}</option>)}
             </select>
           </div>
 
           {/* GENDER */}
           <div>
-            <label className="text-sm text-gray-600">Gender</label>
+            <label className="text-sm text-purple-300">Gender</label>
             <select
-              className="mt-1 w-full border rounded px-2 py-1"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
+              className="
+                mt-1 w-full p-3 rounded-xl
+                bg-black/40 text-white 
+                border border-purple-500/30
+                focus:border-purple-400 outline-none
+              "
             >
-              {GENDERS.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
+              {GENDERS.map((g) => <option key={g}>{g}</option>)}
             </select>
           </div>
 
           {/* DAYS */}
           <div>
-            <label className="text-sm text-gray-600">Days / Week</label>
+            <label className="text-sm text-purple-300">Days / Week</label>
             <input
               type="number"
               min="1"
               max="6"
-              className="mt-1 w-full border rounded px-2 py-1"
               value={days}
               onChange={(e) =>
                 setDays(Math.max(1, Math.min(6, parseInt(e.target.value) || 1)))
               }
+              className="
+                mt-1 w-full p-3 rounded-xl
+                bg-black/40 text-white 
+                border border-purple-500/30
+                focus:border-purple-400 outline-none
+              "
             />
           </div>
 
           {/* LOCATION */}
           <div>
-            <label className="text-sm text-gray-600">Location</label>
+            <label className="text-sm text-purple-300">Location</label>
             <select
-              className="mt-1 w-full border rounded px-2 py-1"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              className="
+                mt-1 w-full p-3 rounded-xl
+                bg-black/40 text-white 
+                border border-purple-500/30
+                focus:border-purple-400 outline-none
+              "
             >
-              {LOCATIONS.map((loc) => (
-                <option key={loc} value={loc}>{loc}</option>
-              ))}
+              {LOCATIONS.map((l) => <option key={l}>{l}</option>)}
             </select>
           </div>
-
-          {/* Buttons */}
-          <div className="col-span-full flex gap-4 mt-3">
-            <button
-              onClick={fetchWorkouts}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg"
-            >
-              Generate Plan
-            </button>
-
-            <button
-              onClick={() => {
-                setCompleted({});
-                localStorage.removeItem(`plan_complete_${planSignature}`);
-              }}
-              className="px-4 py-2 border rounded-lg"
-            >
-              Reset Progress
-            </button>
-          </div>
-
         </div>
 
-        {/* Loading/Error */}
-        {loading && <p>Loading workout plan…</p>}
-        {error && <p className="text-red-600">{error}</p>}
+        {/* BUTTONS */}
+        <div className="flex flex-wrap justify-center gap-4 mb-12">
+          <button
+            onClick={fetchWorkouts}
+            className="
+              px-8 py-3 rounded-xl text-white font-semibold
+              bg-gradient-to-r from-purple-600 to-blue-600
+              shadow-[0_0_15px_rgba(140,0,255,0.5)]
+              hover:opacity-90 transition
+            "
+          >
+            Generate Plan
+          </button>
 
-        {/* Workout days */}
-        <div className="space-y-6">
+          <button
+            onClick={() => {
+              setCompleted({});
+              localStorage.removeItem(`plan_complete_${planSignature}`);
+            }}
+            className="
+              px-8 py-3 rounded-xl
+              bg-white/10 text-white
+              border border-white/20
+              hover:bg-white/20 transition
+            "
+          >
+            Reset Progress
+          </button>
+        </div>
+
+        {/* LOADING & ERROR */}
+        {loading && (
+          <p className="text-center text-purple-300 mb-4">
+            Loading workout plan…
+          </p>
+        )}
+        {error && (
+          <p className="text-center text-red-400 mb-4">{error}</p>
+        )}
+
+        {/* WORKOUT DAY CARDS */}
+        <div className="space-y-8">
           {workouts.map((day, dayIdx) => (
-            <div key={dayIdx} className="border rounded-xl shadow-sm p-4 bg-gray-50">
-              <div className="flex justify-between items-center mb-3">
+            <div
+              key={dayIdx}
+              className="
+                p-6 rounded-2xl
+                bg-black/40 backdrop-blur-xl
+                border border-purple-500/30
+                shadow-[0_0_15px_rgba(140,0,255,0.25)]
+              "
+            >
+              <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold">{day.day}</h3>
+                  <h3 className="text-xl font-semibold text-white">{day.day}</h3>
                   {meta && (
-                    <p className="text-xs text-gray-500">
-                      {meta.location}, {meta.goal}, {meta.level}, {meta.days} days/week
+                    <p className="text-xs text-gray-400 mt-1">
+                      {meta.location}, {meta.goal}, {meta.level},{" "}
+                      {meta.days} days/week
                     </p>
                   )}
                 </div>
-                <div className="text-sm font-medium">{percentComplete(dayIdx)}%</div>
+
+                <div className="text-blue-400 font-bold text-md">
+                  {percentComplete(dayIdx)}%
+                </div>
               </div>
 
-              <ul className="space-y-2">
+              <ul className="space-y-4">
                 {day.exercises.map((ex, exIdx) => {
                   const key = `${dayIdx}_${exIdx}`;
                   const done = !!completed[key];
@@ -272,33 +334,45 @@ export default function WorkoutsPage() {
                   return (
                     <li
                       key={exIdx}
-                      className={`flex justify-between items-center p-3 rounded ${
-                        done ? "bg-green-50" : "bg-white"
-                      } border`}
+                      className={`
+                        p-4 rounded-xl 
+                        border flex justify-between items-center gap-4
+                        ${
+                          done
+                            ? "bg-green-600/20 border-green-500/40"
+                            : "bg-black/30 border-purple-500/20"
+                        }
+                      `}
                     >
                       <div>
-                        <div className="font-medium">{ex.name}</div>
+                        <h4 className="text-white font-semibold">{ex.name}</h4>
 
-                        <div className="text-[11px] text-gray-500">
-                          {ex.muscle && <span>{ex.muscle} • </span>}
-                        </div>
+                        {ex.muscle && (
+                          <p className="text-gray-400 text-xs mt-1">{ex.muscle}</p>
+                        )}
 
-                        <div className="text-xs text-gray-500 mt-1">
+                        <p className="text-gray-400 text-xs mt-1">
                           {ex.sets} × {ex.reps} • Rest: {ex.rest}
-                        </div>
+                        </p>
 
                         {ex.notes && (
-                          <div className="text-xs text-gray-600 italic mt-1">
+                          <p className="text-gray-300 italic text-xs mt-1">
                             {ex.notes}
-                          </div>
+                          </p>
                         )}
                       </div>
 
                       <button
                         onClick={() => toggleDone(dayIdx, exIdx)}
-                        className={`px-3 py-1 rounded-lg ${
-                          done ? "bg-green-600 text-white" : "bg-white border"
-                        }`}
+                        className={`
+                          px-4 py-2 rounded-xl text-sm font-semibold 
+                          transition
+                          ${
+                            done
+                              ? "bg-green-600 text-white"
+                              : "bg-white/10 border border-purple-500/40 text-white hover:bg-white/20"
+                          }
+                        `}
                       >
                         {done ? "Done" : "Mark"}
                       </button>
@@ -310,15 +384,21 @@ export default function WorkoutsPage() {
           ))}
         </div>
 
-        <div className="mt-6 flex justify-between items-center">
+        {/* BACK BUTTON */}
+        <div className="flex justify-center mt-12">
           <button
             onClick={() => navigate("/overview")}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg"
+            className="
+              px-8 py-3 rounded-xl
+              bg-gradient-to-r from-blue-600 to-purple-600
+              text-white font-semibold
+              shadow-[0_0_15px_rgba(140,0,255,0.4)]
+              hover:opacity-90 transition
+            "
           >
-            Back
+            ← Back to Overview
           </button>
         </div>
-
       </div>
     </div>
   );

@@ -2,19 +2,19 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
 const taskPool = require("../utils/dailyTaskPool");
-const verifyToken = require("../middleware/authMiddleware"); // ✅ Replaced old header-based verifier
+const verifyToken = require("../middleware/authMiddleware");
 
 // -----------------------------------------------------
-// ✅ ✅ GET /user/me (AUTO REFRESH DAILY TASKS)
+// GET /user/me (AUTO REFRESH DAILY TASKS)
 // -----------------------------------------------------
 router.get("/me", verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("-password");
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const now = new Date();
 
-    // ✅ No tasks? generate
+    // No tasks? generate
     if (!user.lastTaskRefresh || !user.todayTasks.length) {
       user.todayTasks = taskPool
         .sort(() => 0.5 - Math.random())
@@ -26,7 +26,7 @@ router.get("/me", verifyToken, async (req, res) => {
       return res.status(200).json(user);
     }
 
-    // ✅ Check 24 hours
+    // Check 24 hours
     const hoursPassed = (now - new Date(user.lastTaskRefresh)) / (1000 * 60 * 60);
 
     if (hoursPassed >= 24) {
@@ -47,11 +47,11 @@ router.get("/me", verifyToken, async (req, res) => {
 });
 
 // -----------------------------------------------------
-// ✅ UPDATE PROFILE
+// UPDATE PROFILE
 // -----------------------------------------------------
 router.post("/me", verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const { age, gender, height, weight, goal } = req.body;
@@ -89,7 +89,7 @@ router.post("/me", verifyToken, async (req, res) => {
 });
 
 // -----------------------------------------------------
-// ✅ OLD SYSTEM: TOGGLE (dailyTasks, workouts, meals...)
+// OLD SYSTEM: TOGGLE (dailyTasks, workouts, meals...)
 // -----------------------------------------------------
 router.put("/tasks/toggle/:type/:index", verifyToken, async (req, res) => {
   const { type, index } = req.params;
@@ -99,7 +99,7 @@ router.put("/tasks/toggle/:type/:index", verifyToken, async (req, res) => {
     return res.status(400).json({ message: "Invalid task type" });
 
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.user.id);
     if (!user[type] || !user[type][index])
       return res.status(400).json({ message: "Task not found" });
 
@@ -132,7 +132,7 @@ router.put("/tasks/toggle/:type/:index", verifyToken, async (req, res) => {
 });
 
 // -----------------------------------------------------
-// ✅ OLD SYSTEM: ADD TASK
+// OLD SYSTEM: ADD TASK
 // -----------------------------------------------------
 router.post("/tasks/add/:type", verifyToken, async (req, res) => {
   const { type } = req.params;
@@ -146,7 +146,7 @@ router.post("/tasks/add/:type", verifyToken, async (req, res) => {
     return res.status(400).json({ message: "Task name too short" });
 
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.user.id);
 
     user[type].push({ name, points: points || 5 });
 
@@ -159,13 +159,13 @@ router.post("/tasks/add/:type", verifyToken, async (req, res) => {
 });
 
 // -----------------------------------------------------
-// ✅ ✅ NEW: TOGGLE TODAY'S RANDOM TASK WITH XP + STREAK
+// NEW: TOGGLE TODAY TASK
 // -----------------------------------------------------
 router.put("/tasks/today/:index", verifyToken, async (req, res) => {
   const { index } = req.params;
 
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.user.id);
 
     if (!user.todayTasks || !user.todayTasks[index])
       return res.status(400).json({ message: "Task not found" });
@@ -173,7 +173,6 @@ router.put("/tasks/today/:index", verifyToken, async (req, res) => {
     const task = user.todayTasks[index];
     task.done = !task.done;
 
-    // ✅ Give fixed XP because todayTasks don’t have a points field
     const taskPoints = 10;
 
     if (task.done) {

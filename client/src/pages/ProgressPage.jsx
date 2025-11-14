@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+import API from "../api/axios";
 import Confetti from "react-confetti";
 import { motion } from "framer-motion";
 import {
@@ -13,14 +13,10 @@ export default function ProgressPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [badgeMessage, setBadgeMessage] = useState("");
 
-  const token = localStorage.getItem("token");
-
-  // Fetch progress logs
+  // Fetch progress logs — cookie handles auth automatically
   const fetchLogs = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/progress", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await API.get("/progress"); // 🔥 no headers, cookie used
       setLogs(res.data);
     } catch (err) {
       console.error(err);
@@ -29,14 +25,16 @@ export default function ProgressPage() {
 
   useEffect(() => {
     fetchLogs();
-  }, [token]);
+  }, []);
 
   // Calculate stats
   const totalPoints = useMemo(() => logs.reduce((acc, log) => acc + Number(log.points), 0), [logs]);
+
   const weightChange = useMemo(() => {
     if (!logs.length) return 0;
     return (logs[logs.length - 1].weight - logs[0].weight).toFixed(1);
   }, [logs]);
+
   const streak = useMemo(() => {
     if (!logs.length) return 0;
     let count = 1;
@@ -53,7 +51,10 @@ export default function ProgressPage() {
   // Leveling system
   const level = useMemo(() => Math.floor(totalPoints / 100) + 1, [totalPoints]);
   const nextLevelPoints = useMemo(() => level * 100, [level]);
-  const progressPercent = useMemo(() => Math.min((totalPoints / nextLevelPoints) * 100, 100), [totalPoints, nextLevelPoints]);
+  const progressPercent = useMemo(
+    () => Math.min((totalPoints / nextLevelPoints) * 100, 100),
+    [totalPoints, nextLevelPoints]
+  );
 
   // Badges
   const badges = useMemo(() => {
@@ -71,16 +72,15 @@ export default function ProgressPage() {
     if (weight <= 0 || weight > 300) return alert("Enter a realistic weight!");
     if (points < 0 || points > 100) return alert("Points must be 0-100!");
 
-    // Check badge unlock
+    // Badge unlock detection
     const milestones = [50, 200, 500, 1000];
-    const nextBadge = milestones.find((m) => totalPoints < m && totalPoints + Number(points) >= m);
+    const nextBadge = milestones.find(
+      (m) => totalPoints < m && totalPoints + Number(points) >= m
+    );
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/progress/add",
-        { weight, points },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await API.post("/progress/add", { weight, points }); // 🔥 cookie-based
+
       setWeight("");
       setPoints("");
       await fetchLogs();
@@ -97,7 +97,6 @@ export default function ProgressPage() {
     }
   };
 
-  // Weight change arrow
   const weightArrow = weightChange > 0 ? "⬆️" : weightChange < 0 ? "⬇️" : "➡️";
 
   return (
@@ -105,7 +104,9 @@ export default function ProgressPage() {
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} />}
 
       <h2 className="text-4xl font-bold text-purple-700">📈 Fitness RPG Dashboard</h2>
-      <p className="text-gray-600 text-center">Track progress, earn XP, unlock badges, maintain streaks!</p>
+      <p className="text-gray-600 text-center">
+        Track progress, earn XP, unlock badges, maintain streaks!
+      </p>
 
       {badgeMessage && (
         <motion.div
@@ -123,14 +124,19 @@ export default function ProgressPage() {
           <h3 className="text-xl font-semibold text-purple-600">🏅 Level</h3>
           <p className="text-gray-700 mt-2 text-lg">{level}</p>
         </motion.div>
+
         <motion.div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center border border-gray-100">
           <h3 className="text-xl font-semibold text-purple-600">🎯 Total Points</h3>
           <p className="text-gray-700 mt-2 text-lg">{totalPoints}</p>
         </motion.div>
+
         <motion.div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center border border-gray-100">
           <h3 className="text-xl font-semibold text-purple-600">⚖️ Weight Change</h3>
-          <p className="text-gray-700 mt-2 text-lg">{weightChange} kg {weightArrow}</p>
+          <p className="text-gray-700 mt-2 text-lg">
+            {weightChange} kg {weightArrow}
+          </p>
         </motion.div>
+
         <motion.div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center border border-gray-100">
           <h3 className="text-xl font-semibold text-purple-600">🔥 Streak</h3>
           <p className="text-gray-700 mt-2 text-lg">{streak} day(s)</p>
@@ -139,7 +145,9 @@ export default function ProgressPage() {
 
       {/* Level progress bar */}
       <div className="bg-white w-full max-w-5xl rounded-2xl shadow-lg p-6 mt-6 border border-gray-100">
-        <h3 className="text-lg font-semibold text-purple-600 mb-2">Progress to next level</h3>
+        <h3 className="text-lg font-semibold text-purple-600 mb-2">
+          Progress to next level
+        </h3>
         <div className="w-full bg-gray-200 h-6 rounded-full overflow-hidden">
           <motion.div
             className="bg-purple-600 h-6"
@@ -148,7 +156,9 @@ export default function ProgressPage() {
             transition={{ duration: 1 }}
           />
         </div>
-        <p className="text-right mt-1 text-gray-500">{progressPercent.toFixed(1)}%</p>
+        <p className="text-right mt-1 text-gray-500">
+          {progressPercent.toFixed(1)}%
+        </p>
       </div>
 
       {/* Add progress entry */}
@@ -157,7 +167,10 @@ export default function ProgressPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <h3 className="text-xl font-semibold text-purple-600 text-center">Add Progress Entry</h3>
+        <h3 className="text-xl font-semibold text-purple-600 text-center">
+          Add Progress Entry
+        </h3>
+
         <div className="flex space-x-2">
           <input
             type="number"
@@ -174,6 +187,7 @@ export default function ProgressPage() {
             className="border p-2 rounded w-1/2"
           />
         </div>
+
         <button
           onClick={handleSubmit}
           className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
@@ -184,7 +198,10 @@ export default function ProgressPage() {
 
       {/* Trend chart */}
       <div className="w-full max-w-6xl mt-6 bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-        <h3 className="text-lg font-semibold text-purple-600 mb-2 text-center">📊 Trend</h3>
+        <h3 className="text-lg font-semibold text-purple-600 mb-2 text-center">
+          📊 Trend
+        </h3>
+
         {logs.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={logs}>
@@ -197,13 +214,18 @@ export default function ProgressPage() {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-center text-gray-500">No progress yet. Add your first entry!</p>
+          <p className="text-center text-gray-500">
+            No progress yet. Add your first entry!
+          </p>
         )}
       </div>
 
       {/* Badges */}
       <div className="bg-white w-full max-w-6xl mt-6 rounded-2xl shadow-lg p-6 border border-gray-100">
-        <h3 className="text-lg font-semibold text-purple-600 mb-2 text-center">🏅 Achievements</h3>
+        <h3 className="text-lg font-semibold text-purple-600 mb-2 text-center">
+          🏅 Achievements
+        </h3>
+
         <div className="flex flex-wrap gap-3 justify-center">
           {badges.length > 0 ? (
             badges.map((badge, index) => (

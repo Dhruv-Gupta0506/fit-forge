@@ -22,7 +22,7 @@ export default function MealsPage() {
     "Muscle Gain": "Bulking",
     "Build Muscle": "Bulking",
     "Gain Weight": "Bulking",
-    "Bulking": "Bulking"
+    "Bulking": "Bulking",
   };
 
   // fetch profile
@@ -32,7 +32,7 @@ export default function MealsPage() {
         const token = localStorage.getItem("token");
 
         const res = await API.get("/user/me", {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         setProfile(res.data);
@@ -58,7 +58,7 @@ export default function MealsPage() {
       const token = localStorage.getItem("token");
 
       const res = await API.get(`/meals?diet=${diet}&phase=${phase}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       setMeals(res.data.meals || []);
@@ -75,92 +75,154 @@ export default function MealsPage() {
 
   if (!profile || loading)
     return (
-      <p className="text-center mt-10 text-gray-500">Loading meals...</p>
+      <div className="min-h-screen flex items-center justify-center bg-black text-gray-300">
+        Loading meals...
+      </div>
     );
 
   const grouped = {
     Breakfast: meals.filter((m) => m.meal === "Breakfast").slice(0, 4),
     Lunch: meals.filter((m) => m.meal === "Lunch").slice(0, 4),
     Snacks: meals.filter((m) => m.meal === "Snacks").slice(0, 4),
-    Dinner: meals.filter((m) => m.meal === "Dinner").slice(0, 4)
+    Dinner: meals.filter((m) => m.meal === "Dinner").slice(0, 4),
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white p-6 flex flex-col items-center">
-      <h1 className="text-4xl font-bold text-green-700 mb-4">
-        🥗 Your Meal Options
-      </h1>
+    <div className="relative min-h-screen w-full flex flex-col items-center overflow-x-hidden">
 
-      <p className="text-gray-600 mb-6 text-center">
-        Goal: <span className="font-semibold">{profile.goal}</span> <br />
-        Phase: <span className="font-semibold">{phase}</span> <br />
-        <span className="text-sm text-gray-500">
-          (Choose 1 meal from each category)
-        </span>
-      </p>
+      {/* BACKGROUND IMAGE */}
+      <img
+        src="/food.png"
+        alt="Meals Background"
+        className="
+          absolute inset-0 w-full h-full 
+          object-cover 
+          pointer-events-none
+          opacity-80
+        "
+      />
 
-      <div className="mb-6 flex gap-4">
-        <button
-          className={`px-4 py-2 rounded-lg ${
-            diet === "Veg" ? "bg-green-600 text-white" : "bg-white border"
-          }`}
-          onClick={() => setDiet("Veg")}
+      {/* DARK OVERLAY */}
+      <div className="absolute inset-0 bg-black/70"></div>
+
+      {/* CONTENT */}
+      <div className="relative z-20 w-full max-w-4xl px-6 pt-10 pb-20">
+
+        {/* HEADER */}
+        <h1
+          className="
+            text-center text-4xl md:text-5xl font-extrabold 
+            mb-6 tracking-wide
+            bg-gradient-to-r from-green-400 via-lime-300 to-green-400
+            bg-clip-text text-transparent
+          "
+          style={{ textShadow: "0 0 10px rgba(0,255,120,0.2)" }}
         >
-          Veg
-        </button>
+          🥗 Your Meal Options
+        </h1>
 
-        <button
-          className={`px-4 py-2 rounded-lg ${
-            diet === "Non-Veg" ? "bg-green-600 text-white" : "bg-white border"
-          }`}
-          onClick={() => setDiet("Non-Veg")}
-        >
-          Non-Veg
-        </button>
-      </div>
+        {/* PROFILE INFO */}
+        <div className="text-center text-gray-300 mb-8">
+          <p>
+            Goal: <span className="font-semibold text-green-400">{profile.goal}</span>
+          </p>
+          <p>
+            Phase: <span className="font-semibold text-green-400">{phase}</span>
+          </p>
+          <p className="text-sm text-gray-400 mt-1">(Choose 1 meal from each category)</p>
+        </div>
 
-      <div className="w-full max-w-3xl">
-        {Object.keys(grouped).map((mealType) => (
-          <div key={mealType} className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              {mealType} – Choose 1
-            </h2>
+        {/* DIET SWITCH */}
+        <div className="mb-10 flex gap-4 justify-center">
+          <button
+            className={`
+              px-6 py-2 rounded-xl font-semibold transition
+              ${diet === "Veg"
+                ? "bg-green-600 text-white shadow-[0_0_10px_rgba(0,255,120,0.4)]"
+                : "bg-white/10 text-gray-300 border border-white/20 hover:bg-white/20"}
+            `}
+            onClick={() => setDiet("Veg")}
+          >
+            Veg
+          </button>
 
-            {grouped[mealType].length === 0 && (
-              <p className="text-gray-500">
-                No {mealType} meals available.
-              </p>
-            )}
+          <button
+            className={`
+              px-6 py-2 rounded-xl font-semibold transition
+              ${diet === "Non-Veg"
+                ? "bg-green-600 text-white shadow-[0_0_10px_rgba(0,255,120,0.4)]"
+                : "bg-white/10 text-gray-300 border border-white/20 hover:bg-white/20"}
+            `}
+            onClick={() => setDiet("Non-Veg")}
+          >
+            Non-Veg
+          </button>
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {grouped[mealType].map((m, i) => (
-                <div
-                  key={i}
-                  className="p-4 border rounded-xl shadow-sm bg-white hover:shadow-md hover:bg-green-50 transition"
-                >
-                  <h3 className="font-semibold text-gray-800">{m.name}</h3>
+        {/* MEAL SECTIONS */}
+        <div className="w-full">
+          {Object.keys(grouped).map((mealType) => (
+            <div key={mealType} className="mb-14">
+              <h2
+                className="
+                  text-2xl font-bold mb-4 text-green-400
+                  drop-shadow-[0_0_10px_rgba(0,255,120,0.3)]
+                "
+              >
+                {mealType} – Choose 1
+              </h2>
 
-                  <p className="text-sm text-gray-600 mt-1">
-                    🔥 {m.calories} kcal
-                  </p>
+              {grouped[mealType].length === 0 && (
+                <p className="text-gray-400">No {mealType} meals available.</p>
+              )}
 
-                  <p className="text-xs text-gray-500 mt-1">
-                    🥚 {m.protein}g protein | 🍚 {m.carbs}g carbs | 🥜{" "}
-                    {m.fats}g fats
-                  </p>
-                </div>
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {grouped[mealType].map((m, i) => (
+                  <div
+                    key={i}
+                    className="
+                      p-5 rounded-2xl border border-white/10
+                      bg-black/40 backdrop-blur-xl
+                      shadow-lg 
+                      hover:bg-black/50
+                      hover:shadow-[0_0_15px_rgba(0,255,120,0.2)]
+                      transition
+                    "
+                  >
+                    <h3 className="font-semibold text-white text-lg">{m.name}</h3>
+
+                    <p className="text-sm text-green-400 mt-1">
+                      🔥 {m.calories} kcal
+                    </p>
+
+                    <p className="text-xs text-gray-400 mt-1">
+                      🥚 {m.protein}g protein | 🍚 {m.carbs}g carbs | 🥜 {m.fats}g fats
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <button
-        onClick={() => navigate("/overview")}
-        className="mt-8 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition"
-      >
-        ← Back to Overview
-      </button>
+        {/* BACK BUTTON */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => navigate("/overview")}
+            className="
+              mt-10 px-8 py-3 rounded-xl
+              bg-gradient-to-r from-green-600 to-lime-500
+              text-white font-semibold
+              hover:from-green-500 hover:to-lime-400
+              active:scale-95 transition
+              shadow-[0_0_10px_rgba(0,255,120,0.3)]
+            "
+          >
+            ← Back to Overview
+          </button>
+        </div>
+
+      </div>
     </div>
   );
 }

@@ -1,155 +1,244 @@
-import { useState, useEffect } from "react";
-import API from "../api/axios";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import API from "../api/axios";
 
 export default function ResetOtp() {
   const { state } = useLocation();
   const email = state?.email;
 
-  const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
-
-  const navigate = useNavigate();
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
 
+  const [shake, setShake] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const navigate = useNavigate();
+  const inputsRef = useRef([]);
+
+  // TIMER
   useEffect(() => {
     if (timer === 0) {
       setCanResend(true);
       return;
     }
-
     const interval = setInterval(() => setTimer((t) => t - 1), 1000);
     return () => clearInterval(interval);
   }, [timer]);
 
-  if (!email)
+  if (!email) {
     return (
       <div className="flex items-center justify-center h-screen bg-black text-white">
-        <p>Error: No email provided.</p>
+        <p>No email found. Please try again.</p>
       </div>
     );
+  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  // HANDLE CHANGE
+  function handleOtpChange(value, index) {
+    if (!/^[0-9]?$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (value && index < 5)
+      inputsRef.current[index + 1].focus();
+
+    const fullOtp = newOtp.join("");
+    if (fullOtp.length === 6) handleVerifyAuto(fullOtp);
+  }
+
+  // AUTO VERIFY
+  async function handleVerifyAuto(fullOtp) {
+    setLoading(true);
+    setMessage("");
 
     try {
-      await API.post("/auth/verify-reset-otp", { email, otp });
-      navigate("/reset-password", { state: { email } });
+      await API.post("/auth/verify-reset-otp", { email, otp: fullOtp });
+
+      setSuccess(true);
+
+      setTimeout(() => {
+        navigate("/reset-password", {
+          state: { email, otp: fullOtp },
+        });
+      }, 500);
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid OTP");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+
+      setMessage(err.response?.data?.message || "Invalid OTP");
     }
-  };
 
-  const resendOtp = async () => {
+    setLoading(false);
+  }
+
+  // MANUAL VERIFY
+  async function handleVerify(e) {
+    e.preventDefault();
+    const fullOtp = otp.join("");
+
+    if (fullOtp.length < 6) {
+      setMessage("Enter all 6 digits");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      await API.post("/auth/verify-reset-otp", { email, otp: fullOtp });
+
+      setSuccess(true);
+
+      setTimeout(() => {
+        navigate("/reset-password", {
+          state: { email, otp: fullOtp },
+        });
+      }, 500);
+    } catch (err) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+
+      setMessage(err.response?.data?.message || "Invalid OTP");
+    }
+
+    setLoading(false);
+  }
+
+  // BACKSPACE
+  function handleBackspace(e, index) {
+    if (e.key === "Backspace" && !otp[index] && index > 0)
+      inputsRef.current[index - 1].focus();
+  }
+
+  // RESEND OTP
+  async function resendOtp() {
     if (!canResend) return;
-
     try {
       await API.post("/auth/forgot-password", { email });
-      alert("OTP resent to your email");
 
+      alert("OTP resent!");
       setTimer(30);
       setCanResend(false);
     } catch {
       alert("Failed to resend OTP");
     }
-  };
+  }
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center bg-black overflow-hidden">
 
-      {/* BACKGROUND FRAME (VISIBLE) */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <img
-          src="/reotp.png"
-          alt="Reset OTP Frame"
-          className="
-            w-[90%] 
-            md:w-[65%]
-            opacity-60
-            object-contain
-            scale-125
-            drop-shadow-[0_0_22px_rgba(80,120,255,0.6)]
-          "
-          style={{
-            transform: "translateY(-25px)", // shift up to show top corners
-          }}
-        />
-      </div>
-
-      {/* LIGHT OVERLAY (NOT TOO DARK NOW) */}
-      <div className="absolute inset-0 bg-black/30"></div>
-
-      {/* OTP FORM */}
-      <form
-        onSubmit={handleSubmit}
+      {/* BACKGROUND IMAGE (FULLY VISIBLE) */}
+      <img
+        src="/reotp.png"
+        alt="Reset OTP Background"
         className="
-          relative z-20
-          w-full max-w-sm
-          p-10
-          rounded-3xl
-          bg-[#0b0b10]/85 backdrop-blur-xl
-          border border-blue-500/40
-          text-white
+          absolute inset-0 w-full h-full 
+          object-cover object-center
+          opacity-100
+          pointer-events-none
         "
-        style={{
-          boxShadow: "0 0 20px rgba(70,120,255,0.35)",
-        }}
+      />
+
+      {/* CONTROLLED DARK OVERLAY (NOT HIDING IMAGE) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/65 to-black/40"></div>
+
+      {/* BLUE & PURPLE SOFT GLOW */}
+      <div className="absolute top-10 left-10 w-[280px] h-[280px] bg-blue-600/25 blur-[150px]"></div>
+      <div className="absolute bottom-10 right-10 w-[260px] h-[260px] bg-purple-600/25 blur-[150px]"></div>
+
+      {/* OTP CARD */}
+      <form
+        onSubmit={handleVerify}
+        className={`
+          relative z-20 w-full max-w-sm p-10 sm:p-12 rounded-3xl
+          bg-white/10 backdrop-blur-2xl
+          border border-blue-500/40
+          shadow-[0_0_30px_rgba(0,150,255,0.45)]
+          transition-all
+          ${shake ? "animate-[shake_0.3s_ease-in-out]" : ""}
+          ${success ? "shadow-[0_0_40px_rgba(0,255,160,0.65)] border-green-400" : ""}
+        `}
       >
-        {/* Heading */}
+
+        {/* SHAKE ANIMATION */}
+        <style>
+          {`
+            @keyframes shake {
+              0% { transform: translateX(0); }
+              25% { transform: translateX(-6px); }
+              50% { transform: translateX(6px); }
+              75% { transform: translateX(-6px); }
+              100% { transform: translateX(0); }
+            }
+          `}
+        </style>
+
+        {/* TITLE */}
         <h2
           className="
-            text-3xl font-extrabold text-center mb-4
-            bg-gradient-to-r from-blue-300 via-purple-300 to-blue-200
+            text-3xl sm:text-4xl font-extrabold text-center mb-3
+            bg-gradient-to-r from-blue-300 via-purple-300 to-blue-300
             bg-clip-text text-transparent
           "
           style={{
-            textShadow: "0 0 12px rgba(80,120,255,0.5)",
+            textShadow: "0 0 16px rgba(90,140,255,0.55)",
           }}
         >
           Verify OTP
         </h2>
 
-        <p className="text-center text-gray-300 text-sm mb-2">
-          OTP sent to <b className="text-blue-400">{email}</b>
+        <p className="text-center text-gray-300 text-sm mb-4">
+          OTP sent to <span className="text-blue-400">{email}</span>
         </p>
 
-        {error && (
+        {message && (
           <p className="text-red-400 text-sm text-center bg-red-900/40 p-2 rounded-lg mb-4 border border-red-700/40">
-            {error}
+            {message}
           </p>
         )}
 
-        {/* OTP INPUT */}
-        <input
-          type="text"
-          maxLength={6}
-          placeholder="Enter 6-digit OTP"
-          className="
-            w-full p-3 mt-1 mb-5 rounded-xl
-            bg-black/40 border border-gray-600
-            text-white
-            focus:border-blue-400 focus:ring-2 focus:ring-blue-600
-            outline-none transition
-          "
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
-        />
+        {/* OTP INPUTS */}
+        <div className="flex justify-center gap-2 sm:gap-3 mb-6">
+          {otp.map((digit, index) => (
+            <input
+              key={index}
+              maxLength={1}
+              value={digit}
+              ref={(el) => (inputsRef.current[index] = el)}
+              onChange={(e) => handleOtpChange(e.target.value, index)}
+              onKeyDown={(e) => handleBackspace(e, index)}
+              className="
+                w-10 h-12 sm:w-12 sm:h-14
+                text-center text-xl font-semibold
+                rounded-xl
+                bg-black/40 border border-gray-600 text-white
+                focus:border-blue-400 focus:ring-2 focus:ring-blue-500
+                transition
+                shadow-[0_0_12px_rgba(0,120,255,0.35)]
+              "
+            />
+          ))}
+        </div>
 
         {/* VERIFY BUTTON */}
         <button
+          disabled={loading}
           className="
-            w-full py-3 rounded-xl 
+            w-full py-3 mb-4 rounded-xl
             bg-gradient-to-r from-blue-600 to-purple-700
             hover:from-blue-500 hover:to-purple-600
             text-white font-semibold
             active:scale-95 transition
-            mb-4
+            shadow-[0_0_22px_rgba(0,150,255,0.45)]
           "
         >
-          Verify OTP
+          {loading ? "Verifying..." : "Verify OTP"}
         </button>
 
         {/* RESEND BUTTON */}
@@ -161,8 +250,8 @@ export default function ResetOtp() {
             w-full py-3 rounded-xl text-sm transition
             ${
               canResend
-                ? "bg-white/10 text-gray-200 border border-gray-500 hover:bg-white/20"
-                : "bg-white/5 text-gray-500 cursor-not-allowed"
+                ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                : "bg-gray-800 text-gray-500 cursor-not-allowed"
             }
           `}
         >

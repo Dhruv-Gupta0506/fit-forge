@@ -22,6 +22,7 @@ export default function RegisterPage() {
     if (res.error) {
       setError(res.error);
     } else {
+      // 🔥 IMPORTANT: Do NOT save token here. Cookie is handled by backend.
       alert("OTP sent to your email. Please verify.");
       navigate("/verify-otp", { state: { email: form.email } });
     }
@@ -35,17 +36,21 @@ export default function RegisterPage() {
       {/* BACKGROUND IMAGE */}
       <img
         src="/register.png"
-        alt="FitForge Register Background"
+        alt="Register Background"
         className="
           absolute inset-0 w-full h-full 
-          object-cover object-center 
-          opacity-70
+          object-cover 
+          opacity-85
           pointer-events-none
         "
       />
 
-      {/* DARK OVERLAY FOR READABILITY */}
-      <div className="absolute inset-0 bg-black/60"></div>
+      {/* Lighter overlay to reveal FITFORGE logo */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60"></div>
+
+      {/* Ambient Glows */}
+      <div className="absolute left-[8%] bottom-[10%] w-[280px] h-[280px] bg-blue-500/25 blur-[130px]"></div>
+      <div className="absolute right-[8%] bottom-[5%] w-[250px] h-[250px] bg-purple-600/25 blur-[140px]"></div>
 
       {/* REGISTER FORM */}
       <form
@@ -53,26 +58,24 @@ export default function RegisterPage() {
         className="
           relative z-20 
           w-full max-w-sm 
-          p-10 
-          rounded-3xl 
-          bg-white/10 backdrop-blur-xl
+          p-8 sm:p-10
+          rounded-3xl
+          bg-white/10 backdrop-blur-2xl
           border border-blue-500/40
-          text-white
-          shadow-[0_0_20px_rgba(0,0,0,0.4)]
+          shadow-[0_0_25px_rgba(0,120,255,0.4)]
         "
-        style={{
-          boxShadow: "0 0 0 1px rgba(59,130,246,0.25)",
-        }}
+        style={{ marginTop: "-40px" }} // lifts form slightly
       >
         {/* Header */}
         <h2
           className="
-            text-4xl font-extrabold 
+            text-3xl sm:text-4xl font-extrabold 
             text-center mb-8
-            tracking-wide
           "
           style={{
-            textShadow: "0 0 6px rgba(0,150,255,0.3)",
+            color: "white",
+            textShadow: "0 0 15px rgba(0,180,255,0.55)",
+            letterSpacing: "-0.5px"
           }}
         >
           Create Account
@@ -92,11 +95,11 @@ export default function RegisterPage() {
           value={form.name}
           onChange={handleChange}
           className="
-            w-full p-3 mt-1 mb-5 rounded-xl 
-            bg-black/40 border border-gray-600 
+            w-full p-3 mt-1 mb-5 rounded-xl
+            bg-black/40 border border-gray-600
             text-white 
-            focus:border-blue-400 focus:ring-2 focus:ring-blue-500 
-            outline-none transition
+            focus:border-blue-400 focus:ring-2 focus:ring-blue-500
+            transition
           "
         />
 
@@ -109,17 +112,17 @@ export default function RegisterPage() {
           value={form.email}
           onChange={handleChange}
           className="
-            w-full p-3 mt-1 mb-5 rounded-xl 
-            bg-black/40 border border-gray-600 
+            w-full p-3 mt-1 mb-5 rounded-xl
+            bg-black/40 border border-gray-600
             text-white 
-            focus:border-blue-400 focus:ring-2 focus:ring-blue-500 
-            outline-none transition
+            focus:border-blue-400 focus:ring-2 focus:ring-blue-500
+            transition
           "
         />
 
         {/* PASSWORD */}
         <label className="text-gray-300 text-sm">Password</label>
-        <div className="relative mb-5">
+        <div className="relative mb-6">
           <input
             name="password"
             type={showPassword ? "text" : "password"}
@@ -127,40 +130,37 @@ export default function RegisterPage() {
             value={form.password}
             onChange={handleChange}
             className="
-              w-full p-3 mt-1 rounded-xl 
-              bg-black/40 border border-gray-600 
+              w-full p-3 mt-1 rounded-xl
+              bg-black/40 border border-gray-600
               text-white 
-              focus:border-blue-400 focus:ring-2 focus:ring-blue-500 
-              outline-none transition
+              focus:border-blue-400 focus:ring-2 focus:ring-blue-500
+              transition
             "
           />
           <span
-            className="
-              absolute right-4 top-1/2 -translate-y-1/2 
-              cursor-pointer text-gray-400 hover:text-white
-            "
             onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-white"
           >
             {showPassword ? "🙈" : "👁️"}
           </span>
         </div>
 
-        {/* SUBMIT */}
+        {/* BUTTON */}
         <button
           type="submit"
           disabled={loading}
           className="
             w-full py-3 rounded-xl 
-            bg-gradient-to-r from-blue-600 to-blue-800
-            hover:from-blue-500 hover:to-blue-700
-            text-white font-semibold 
+            bg-gradient-to-r from-blue-600 to-purple-700 
+            hover:from-blue-500 hover:to-purple-600
+            text-white font-semibold
             active:scale-95 transition
+            shadow-[0_0_20px_rgba(0,150,255,0.45)]
           "
         >
           {loading ? "Registering..." : "Register"}
         </button>
 
-        {/* LINK */}
         <p className="text-center text-sm text-gray-300 mt-6">
           Already have an account?{" "}
           <Link to="/login" className="text-blue-400 hover:underline">

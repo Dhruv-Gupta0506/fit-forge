@@ -25,6 +25,9 @@ export default function LoginPage() {
       }
       setError(res.error);
     } else {
+      // 🔥 COOKIE HANDLES LOGIN; NO TOKEN STORAGE NEEDED
+      // localStorage.removeItem("token"); // not needed anymore
+      // localStorage.setItem("token", res.token); // removed
       navigate("/dashboard");
     }
 
@@ -32,55 +35,62 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-black overflow-hidden">
+    <div className="relative min-h-screen w-full flex items-center justify-end overflow-hidden bg-black">
 
-      {/* LEFT SIDE IMAGE */}
-      <div className="hidden md:flex w-1/2 items-center justify-center px-8">
-        <img
-          src="/login.png"
-          alt="FitForge"
-          className="w-full h-auto object-contain select-none"
-        />
-      </div>
+      {/* FULL BACKGROUND IMAGE */}
+      <img
+        src="/login.png"
+        className="absolute inset-0 w-full h-full object-cover opacity-[0.78] pointer-events-none"
+      />
 
-      {/* RIGHT SIDE FORM */}
-      <div className="flex-1 flex items-center justify-center px-6">
+      {/* DARK GRADIENT OVERLAY */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/60 to-purple-900/25"></div>
+
+      {/* Soft ambient glows */}
+      <div className="absolute left-0 top-1/3 w-[300px] h-[300px] bg-blue-500/15 blur-[130px]"></div>
+      <div className="absolute right-0 bottom-0 w-[280px] h-[280px] bg-purple-600/15 blur-[150px]"></div>
+
+      {/* LOGIN FORM — ALIGNED RIGHT */}
+      <div className="relative z-10 w-full max-w-md px-6 sm:px-10 md:mr-24 lg:mr-36 xl:mr-48">
 
         <form
           onSubmit={handleSubmit}
           className="
-            w-full max-w-sm
-            p-10
+            w-full 
+            p-10 sm:p-12
             rounded-3xl
-            bg-white/10 backdrop-blur-xl
-            border border-blue-500/40
+            bg-white/10 backdrop-blur-2xl
+            border border-blue-400/30
             text-white
-            shadow-[0_0_0_rgba(0,0,0,0)]
+            shadow-[0_0_35px_rgba(0,120,255,0.30)]
           "
           style={{
-            boxShadow: "0 0 0 1px rgba(59,130,246,0.2)",
+            boxShadow: "0 0 30px rgba(0,120,255,0.22)",
           }}
         >
-          {/* Header */}
+          {/* HEADER */}
           <h2
             className="
-              text-4xl font-extrabold text-center mb-8
-              text-white tracking-wide
+              whitespace-nowrap
+              text-3xl sm:text-4xl md:text-[2.6rem]
+              font-extrabold text-center mb-8
             "
             style={{
-              textShadow: "0 0 6px rgba(0,150,255,0.3)",
+              textShadow: "0 0 12px rgba(0,180,255,0.45)",
+              letterSpacing: "-0.5px",
             }}
           >
             Welcome Back
           </h2>
 
+          {/* ERROR MESSAGE */}
           {error && (
             <p className="text-red-400 text-sm text-center bg-red-900/40 p-2 rounded-lg mb-4 border border-red-700/40">
               {error}
             </p>
           )}
 
-          {/* EMAIL */}
+          {/* EMAIL FIELD */}
           <label className="text-gray-300 text-sm">Email</label>
           <input
             type="email"
@@ -97,9 +107,9 @@ export default function LoginPage() {
             "
           />
 
-          {/* PASSWORD */}
+          {/* PASSWORD FIELD */}
           <label className="text-gray-300 text-sm">Password</label>
-          <div className="relative mb-5">
+          <div className="relative mb-6">
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -125,7 +135,7 @@ export default function LoginPage() {
             </span>
           </div>
 
-          {/* FORGOT PASSWORD LINK */}
+          {/* FORGOT PASSWORD */}
           <div className="text-right mb-6">
             <Link
               to="/forgot-password"
@@ -135,21 +145,23 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* BUTTON */}
+          {/* LOGIN BUTTON */}
           <button
             type="submit"
             disabled={loading}
             className="
               w-full py-3 rounded-xl
-              bg-gradient-to-r from-blue-600 to-blue-800
-              hover:from-blue-500 hover:to-blue-700
+              bg-gradient-to-r from-blue-600 to-purple-700
+              hover:from-blue-500 hover:to-purple-600 
               text-white font-semibold
               active:scale-95 transition
+              shadow-[0_0_22px_rgba(0,150,255,0.45)]
             "
           >
             {loading ? "Logging in..." : "Login"}
           </button>
 
+          {/* REGISTER LINK */}
           <p className="text-center text-sm text-gray-300 mt-6">
             Don’t have an account?{" "}
             <Link to="/register" className="text-blue-400 hover:underline">

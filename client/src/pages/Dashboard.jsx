@@ -11,6 +11,7 @@ export default function Dashboard() {
     weight: "",
     goal: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -26,10 +27,10 @@ export default function Dashboard() {
           weight: res.data.weight || "",
           goal: res.data.goal || "",
         });
+
         if (res.data.age && res.data.goal) setSaved(true);
       } catch (err) {
-        console.error(err);
-        setError("⚠️ Failed to load profile. Please try again.");
+        setError("⚠️ Failed to load profile.");
       }
     };
     fetchProfile();
@@ -37,8 +38,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (saved) {
-      const timer = setTimeout(() => navigate("/overview"), 1500);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => navigate("/overview"), 1500);
+      return () => clearTimeout(t);
     }
   }, [saved, navigate]);
 
@@ -49,20 +50,21 @@ export default function Dashboard() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
     try {
       await API.post("/user/me", profile);
       setSaved(true);
     } catch (err) {
-      console.error(err);
-      setError("❌ Failed to save profile. Please try again.");
+      setError("❌ Failed to save profile.");
     }
+
     setLoading(false);
   };
 
   const bmi = useMemo(() => {
     if (!profile.height || !profile.weight) return null;
-    const heightM = profile.height / 100;
-    return (profile.weight / (heightM * heightM)).toFixed(1);
+    const h = profile.height / 100;
+    return (profile.weight / (h * h)).toFixed(1);
   }, [profile.height, profile.weight]);
 
   const bmiCategory = useMemo(() => {
@@ -74,49 +76,52 @@ export default function Dashboard() {
   }, [bmi]);
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-black overflow-hidden">
+    <div className="relative min-h-screen w-full flex flex-col items-center overflow-hidden bg-black">
 
+      {/* FULL-SCREEN BACKGROUND */}
       <img
         src="/dashboard.png"
-        alt="Dashboard Background"
         className="
           absolute inset-0 w-full h-full
-          object-cover md:object-fill lg:object-cover
+          object-cover
           pointer-events-none
+          opacity-90
         "
-        style={{ opacity: 0.85 }}
+        alt="Dashboard Background"
       />
 
+      {/* DARK CENTER OVERLAY like overview */}
       <div className="absolute inset-0 bg-black/60"></div>
 
-      {/* MOBILE FRIENDLY CONTAINER */}
-      <div className="relative z-20 w-full max-w-4xl px-6 sm:px-10 md:px-6">
+      {/* NEON GLOWS */}
+      <div className="absolute top-0 w-full h-[200px] bg-blue-500/10 blur-[140px]"></div>
+      <div className="absolute bottom-0 w-full h-[200px] bg-purple-600/10 blur-[140px]"></div>
 
-        {/* RESPONSIVE HEADING */}
-        <h1
-          className="
-            text-center 
-            text-2xl sm:text-3xl md:text-5xl 
-            font-extrabold 
-            mb-10 
-            tracking-wide 
-            whitespace-normal md:whitespace-nowrap
-            bg-gradient-to-r from-blue-400 via-purple-400 to-blue-300
-            bg-clip-text text-transparent
-          "
-          style={{
-            fontFamily: "Poppins, sans-serif",
-            textShadow: "0 0 10px rgba(80,120,255,0.28)",
-            overflow: "visible",
-            paddingInline: "8px",
-          }}
-        >
-          Your Fitness Dashboard
-        </h1>
+      {/* HEADER */}
+      <h1
+        className="
+          relative z-20
+          text-center 
+          text-4xl sm:text-5xl 
+          font-extrabold 
+          mt-14 mb-10
+          tracking-wide
+          bg-gradient-to-r from-blue-400 via-purple-300 to-blue-400
+          bg-clip-text text-transparent
+        "
+        style={{
+          textShadow: "0 0 16px rgba(150,100,255,0.45)",
+        }}
+      >
+        Your Fitness Dashboard
+      </h1>
 
-        {saved && !error && (
-          <p className="text-green-400 font-semibold mb-4 text-center animate-pulse">
-            ✅ Profile saved successfully! Redirecting...
+      {/* FORM WRAPPER */}
+      <div className="relative z-20 w-full max-w-3xl px-6 sm:px-8">
+
+        {saved && (
+          <p className="text-green-400 text-center font-medium mb-4 animate-pulse">
+            ✅ Profile saved — redirecting...
           </p>
         )}
 
@@ -124,38 +129,36 @@ export default function Dashboard() {
           <form
             onSubmit={handleSubmit}
             className="
-              bg-white/10 backdrop-blur-xl
-              border border-blue-500/40
-              rounded-3xl shadow-xl
-              p-6 sm:p-8
-              space-y-6 text-white
+              bg-white/10 backdrop-blur-2xl
+              border border-blue-400/40
+              rounded-3xl 
+              shadow-[0_0_28px_rgba(100,140,255,0.35)]
+              p-6 sm:p-10
+              space-y-6 
+              text-white
             "
-            style={{
-              boxShadow: "0 0 16px rgba(0,150,255,0.25)",
-            }}
           >
             <h2
               className="
                 text-xl sm:text-2xl 
-                font-bold 
+                font-semibold 
                 text-center 
-                mb-2 
-                whitespace-normal sm:whitespace-nowrap
+                mb-3
               "
-              style={{ textShadow: "0 0 4px rgba(0,150,255,0.3)" }}
+              style={{ textShadow: "0 0 6px rgba(100,150,255,0.35)" }}
             >
               Complete Your Fitness Profile
             </h2>
 
             {error && (
-              <p className="text-red-400 text-sm text-center bg-red-900/40 p-2 rounded-lg border border-red-700/40">
+              <p className="text-red-400 text-sm bg-red-900/40 p-2 rounded-xl text-center border border-red-700/40">
                 {error}
               </p>
             )}
 
             {/* AGE */}
             <div>
-              <label className="block text-gray-300 font-medium mb-1">🧓 Age</label>
+              <label className="block text-gray-300 mb-1">🧓 Age</label>
               <input
                 name="age"
                 type="number"
@@ -165,17 +168,16 @@ export default function Dashboard() {
                 onChange={handleChange}
                 className="
                   w-full p-3 rounded-xl
-                  bg-black/40 border border-gray-600
+                  bg-black/50 border border-gray-600
                   focus:border-blue-400 focus:ring-2 focus:ring-blue-500
-                  outline-none transition
+                  transition
                 "
               />
             </div>
 
             {/* GENDER */}
             <div>
-              <label className="block text-gray-300 font-medium mb-1">🚻 Gender</label>
-
+              <label className="block text-gray-300 mb-1">🚻 Gender</label>
               <div className="relative">
                 <select
                   name="gender"
@@ -183,11 +185,10 @@ export default function Dashboard() {
                   value={profile.gender}
                   onChange={handleChange}
                   className="
-                    w-full p-3 rounded-xl appearance-none
-                    bg-black/40 border border-gray-600 text-white
+                    w-full p-3 rounded-xl
+                    bg-black/50 border border-gray-600
                     focus:border-blue-400 focus:ring-2 focus:ring-blue-500
-                    outline-none transition
-                    cursor-pointer
+                    appearance-none
                   "
                 >
                   <option value="">Select Gender</option>
@@ -196,7 +197,7 @@ export default function Dashboard() {
                   <option value="Other">⚧️ Other</option>
                 </select>
 
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300">
                   ▼
                 </span>
               </div>
@@ -204,7 +205,7 @@ export default function Dashboard() {
 
             {/* HEIGHT */}
             <div>
-              <label className="block text-gray-300 font-medium mb-1">📏 Height</label>
+              <label className="block text-gray-300 mb-1">📏 Height</label>
               <input
                 name="height"
                 type="number"
@@ -214,16 +215,15 @@ export default function Dashboard() {
                 onChange={handleChange}
                 className="
                   w-full p-3 rounded-xl
-                  bg-black/40 border border-gray-600
+                  bg-black/50 border border-gray-600
                   focus:border-blue-400 focus:ring-2 focus:ring-blue-500
-                  outline-none transition
                 "
               />
             </div>
 
             {/* WEIGHT */}
             <div>
-              <label className="block text-gray-300 font-medium mb-1">⚖️ Weight</label>
+              <label className="block text-gray-300 mb-1">⚖️ Weight</label>
               <input
                 name="weight"
                 type="number"
@@ -233,17 +233,15 @@ export default function Dashboard() {
                 onChange={handleChange}
                 className="
                   w-full p-3 rounded-xl
-                  bg-black/40 border border-gray-600
+                  bg-black/50 border border-gray-600
                   focus:border-blue-400 focus:ring-2 focus:ring-blue-500
-                  outline-none transition
                 "
               />
             </div>
 
             {/* GOAL */}
             <div>
-              <label className="block text-gray-300 font-medium mb-1">🎯 Fitness Goal</label>
-
+              <label className="block text-gray-300 mb-1">🎯 Fitness Goal</label>
               <div className="relative">
                 <select
                   name="goal"
@@ -251,11 +249,10 @@ export default function Dashboard() {
                   value={profile.goal}
                   onChange={handleChange}
                   className="
-                    w-full p-3 rounded-xl appearance-none
-                    bg-black/40 border border-gray-600 text-white
+                    w-full p-3 rounded-xl
+                    bg-black/50 border border-gray-600
                     focus:border-blue-400 focus:ring-2 focus:ring-blue-500
-                    outline-none transition
-                    cursor-pointer
+                    appearance-none
                   "
                 >
                   <option value="">Select Fitness Goal</option>
@@ -264,7 +261,7 @@ export default function Dashboard() {
                   <option value="Bulking">💪 Bulking</option>
                 </select>
 
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300">
                   ▼
                 </span>
               </div>
@@ -281,13 +278,14 @@ export default function Dashboard() {
               disabled={loading}
               className="
                 w-full py-3 rounded-xl
-                bg-gradient-to-r from-blue-600 to-blue-800
-                hover:from-blue-500 hover:to-blue-700
+                bg-gradient-to-r from-blue-600 to-purple-700
+                hover:from-blue-500 hover:to-purple-600
                 text-white font-semibold
                 active:scale-95 transition
+                shadow-[0_0_18px_rgba(0,150,255,0.45)]
               "
             >
-              {loading ? "💾 Saving..." : "✅ Save Profile"}
+              {loading ? "Saving..." : "Save Profile"}
             </button>
           </form>
         )}
