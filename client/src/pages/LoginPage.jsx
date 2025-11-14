@@ -24,33 +24,29 @@ export default function LoginPage() {
         return navigate("/verify-otp", { state: { email: form.email } });
       }
       setError(res.error);
-    } else {
-      // 🔥 COOKIE HANDLES LOGIN; NO TOKEN STORAGE NEEDED
-      // localStorage.removeItem("token"); // not needed anymore
-      // localStorage.setItem("token", res.token); // removed
-      navigate("/dashboard");
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    // 🔥 THIS IS THE MAIN FIX
+    // navigate() DOES NOT cause cookies to attach immediately.
+    // A hard reload forces browser to include the new cookie.
+    window.location.href = "/dashboard";
   };
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-end overflow-hidden bg-black">
 
-      {/* FULL BACKGROUND IMAGE */}
       <img
         src="/login.png"
         className="absolute inset-0 w-full h-full object-cover opacity-[0.78] pointer-events-none"
       />
 
-      {/* DARK GRADIENT OVERLAY */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/60 to-purple-900/25"></div>
 
-      {/* Soft ambient glows */}
       <div className="absolute left-0 top-1/3 w-[300px] h-[300px] bg-blue-500/15 blur-[130px]"></div>
       <div className="absolute right-0 bottom-0 w-[280px] h-[280px] bg-purple-600/15 blur-[150px]"></div>
 
-      {/* LOGIN FORM — ALIGNED RIGHT */}
       <div className="relative z-10 w-full max-w-md px-6 sm:px-10 md:mr-24 lg:mr-36 xl:mr-48">
 
         <form
@@ -64,11 +60,9 @@ export default function LoginPage() {
             text-white
             shadow-[0_0_35px_rgba(0,120,255,0.30)]
           "
-          style={{
-            boxShadow: "0 0 30px rgba(0,120,255,0.22)",
-          }}
+          style={{ boxShadow: "0 0 30px rgba(0,120,255,0.22)" }}
         >
-          {/* HEADER */}
+
           <h2
             className="
               whitespace-nowrap
@@ -83,14 +77,12 @@ export default function LoginPage() {
             Welcome Back
           </h2>
 
-          {/* ERROR MESSAGE */}
           {error && (
             <p className="text-red-400 text-sm text-center bg-red-900/40 p-2 rounded-lg mb-4 border border-red-700/40">
               {error}
             </p>
           )}
 
-          {/* EMAIL FIELD */}
           <label className="text-gray-300 text-sm">Email</label>
           <input
             type="email"
@@ -107,7 +99,6 @@ export default function LoginPage() {
             "
           />
 
-          {/* PASSWORD FIELD */}
           <label className="text-gray-300 text-sm">Password</label>
           <div className="relative mb-6">
             <input
@@ -135,7 +126,6 @@ export default function LoginPage() {
             </span>
           </div>
 
-          {/* FORGOT PASSWORD */}
           <div className="text-right mb-6">
             <Link
               to="/forgot-password"
@@ -145,7 +135,6 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {/* LOGIN BUTTON */}
           <button
             type="submit"
             disabled={loading}
@@ -161,13 +150,13 @@ export default function LoginPage() {
             {loading ? "Logging in..." : "Login"}
           </button>
 
-          {/* REGISTER LINK */}
           <p className="text-center text-sm text-gray-300 mt-6">
             Don’t have an account?{" "}
             <Link to="/register" className="text-blue-400 hover:underline">
               Register
             </Link>
           </p>
+
         </form>
       </div>
     </div>
