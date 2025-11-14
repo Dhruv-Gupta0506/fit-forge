@@ -13,11 +13,12 @@ app.use(express.json());
 app.use(cookieParser());
 
 // -------------------------------------------------------------
-// ⭐ CLEAN + SAFE CORS (NO INVALID HEADERS / NO CRASHES)
+// ⭐ UPDATED CORS — ALLOW BOTH VERCEL DOMAINS
 // -------------------------------------------------------------
 const allowedOrigins = [
-  (process.env.CLIENT_URL || "").trim(),
-  "http://localhost:5173",
+  process.env.CLIENT_URL?.trim(),   // main vercel domain
+  process.env.CLIENT_URL1?.trim(),  // backup vercel domain
+  "http://localhost:5173"
 ];
 
 app.use(
