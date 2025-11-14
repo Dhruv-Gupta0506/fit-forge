@@ -9,8 +9,6 @@ const nodemailer = require('nodemailer');
 const authMiddleware = require("../middleware/authMiddleware");
 
 const JWT_EXPIRES = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-// 🔥 Detect if running on Render production
 const isProduction = process.env.NODE_ENV === "production";
 
 // -------------------- OTP HELPERS --------------------
@@ -44,7 +42,9 @@ async function sendOtpEmail(email, otp) {
   console.log("📨 OTP SENT TO:", email);
 }
 
-// -------------------- REGISTER --------------------
+// =========================================================
+// REGISTER
+// =========================================================
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -79,7 +79,9 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// -------------------- VERIFY OTP --------------------
+// =========================================================
+// VERIFY OTP (EMAIL VERIFICATION)
+// =========================================================
 router.post('/verify-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -103,7 +105,6 @@ router.post('/verify-otp', async (req, res) => {
       expiresIn: "7d"
     });
 
-    // ✅ FIXED COOKIE (works on both local + production)
     res.cookie("accessToken", token, {
       httpOnly: true,
       secure: isProduction,
@@ -123,7 +124,9 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
-// -------------------- LOGIN --------------------
+// =========================================================
+// LOGIN
+// =========================================================
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -143,7 +146,6 @@ router.post('/login', async (req, res) => {
       expiresIn: "7d"
     });
 
-    // ✅ FIXED COOKIE (this is the MAIN FIX)
     res.cookie("accessToken", token, {
       httpOnly: true,
       secure: isProduction,
@@ -163,7 +165,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// -------------------- AUTO LOGIN --------------------
+// =========================================================
+// AUTO LOGIN (ME)
+// =========================================================
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -176,6 +180,81 @@ router.get('/me', authMiddleware, async (req, res) => {
 
   } catch (err) {
     console.error("❌ Auto-login error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================================================
+// FORGOT PASSWORD (SEND OTP)
+// =========================================================
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    const otp = generateOtp();
+    user.otpHash = hashOtp(otp);
+    user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    await sendOtpEmail(email, otp);
+
+    res.json({ message: "OTP sent for password reset", email });
+
+  } catch (err) {
+    console.error("❌ Forgot-password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================================================
+// VERIFY RESET OTP
+// =========================================================
+router.post("/reset-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    if (hashOtp(otp) !== user.otpHash)
+      return res.status(400).json({ message: "Invalid OTP" });
+
+    if (Date.now() > user.otpExpiresAt)
+      return res.status(400).json({ message: "OTP expired" });
+
+    res.json({ message: "OTP verified" });
+
+  } catch (err) {
+    console.error("❌ Reset OTP error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================================================
+// RESET PASSWORD
+// =========================================================
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    user.otpHash = undefined;
+    user.otpExpiresAt = undefined;
+
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+
+  } catch (err) {
+    console.error("❌ Reset password error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
