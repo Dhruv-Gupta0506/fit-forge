@@ -19,7 +19,7 @@ function generateOtp() {
 }
 
 function hashOtp(otp) {
-  return crypto.createHash("sha256").update(otp).digest("hex");
+  return crypto.createHash("sha256").update(String(otp)).digest("hex");
 }
 
 // -------------------- SEND EMAIL USING RESEND --------------------
@@ -28,7 +28,7 @@ async function sendOtpEmail(email, otp) {
     await resend.emails.send({
       from: `FitForge <${process.env.SENDER_EMAIL}>`,
       to: email,
-      subject: "Your FitForge OTP Code",
+      subject: "Your FitForge OTP",
       html: `
         <h2>Your OTP is <b>${otp}</b></h2>
         <p>This OTP expires in <b>10 minutes</b>.</p>
@@ -47,24 +47,23 @@ async function sendOtpEmail(email, otp) {
 // =========================================================
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const email = req.body.email.toLowerCase();
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(400).json({ message: "User already exists" });
 
     const user = await User.create({
-      name,
-      email: email.toLowerCase(),
-      password,
+      name: req.body.name,
+      email,
+      password: req.body.password,
       isVerified: false,
     });
 
     const otp = generateOtp();
     user.otpHash = hashOtp(otp);
     user.otpExpiresAt = Date.now() + 10 * 60 * 1000;
-    await user.save();
 
+    await user.save();
     await sendOtpEmail(email, otp);
 
     res.json({ message: "OTP sent", email });
@@ -75,13 +74,14 @@ router.post("/register", async (req, res) => {
 });
 
 // =========================================================
-// VERIFY OTP
+// VERIFY OTP (REGISTER)
 // =========================================================
 router.post("/verify-otp", async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    const email = req.body.email.toLowerCase();
+    const otp = String(req.body.otp).trim();
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
     if (hashOtp(otp) !== user.otpHash)
@@ -95,9 +95,7 @@ router.post("/verify-otp", async (req, res) => {
     user.otpExpiresAt = null;
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
     res.cookie("accessToken", token, {
       httpOnly: true,
@@ -118,22 +116,19 @@ router.post("/verify-otp", async (req, res) => {
 // =========================================================
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = req.body.email.toLowerCase();
+    const password = req.body.password;
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user)
-      return res.status(400).json({ message: "Invalid credentials" });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     if (!user.isVerified)
       return res.status(401).json({ message: "Please verify your email first" });
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
     res.cookie("accessToken", token, {
       httpOnly: true,
@@ -150,28 +145,13 @@ router.post("/login", async (req, res) => {
 });
 
 // =========================================================
-// AUTO LOGIN
-// =========================================================
-router.get("/me", authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    res.json({ user });
-  } catch (err) {
-    console.error("❌ Me Error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// =========================================================
 // FORGOT PASSWORD
 // =========================================================
 router.post("/forgot-password", async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = req.body.email.toLowerCase();
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
     const otp = generateOtp();
@@ -193,9 +173,10 @@ router.post("/forgot-password", async (req, res) => {
 // =========================================================
 router.post("/reset-otp", async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    const email = req.body.email.toLowerCase();
+    const otp = String(req.body.otp).trim();
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
     if (hashOtp(otp) !== user.otpHash)
@@ -212,20 +193,21 @@ router.post("/reset-otp", async (req, res) => {
 });
 
 // =========================================================
-// RESET PASSWORD
+// RESET PASSWORD (NO DOUBLE HASHING)
 // =========================================================
 router.post("/reset-password", async (req, res) => {
   try {
-    const { email, newPassword } = req.body;
+    const email = req.body.email.toLowerCase();
+    const newPassword = req.body.newPassword;
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-
+    // DO NOT HASH HERE (schema handles hashing)
+    user.password = newPassword;
     user.otpHash = null;
     user.otpExpiresAt = null;
+
     await user.save();
 
     res.json({ message: "Password reset successful" });
