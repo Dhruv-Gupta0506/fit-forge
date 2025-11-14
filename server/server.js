@@ -6,19 +6,43 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-// 🔥 REQUIRED FOR COOKIES TO WORK PROPERLY (Chrome + secure/sameSite=None)
+// Required for cookies to work properly behind reverse proxies (Render)
 app.set("trust proxy", 1);
 
 app.use(express.json());
 app.use(cookieParser());
+
+// ------------------------------------------------------------------------------------
+// ✔ FIXED: CLEAN CORS SETUP — NO INVALID HEADER CHARACTERS ANYMORE
+// ------------------------------------------------------------------------------------
+const CLIENT_URL = (process.env.CLIENT_URL || "").trim();
+
+const allowedOrigins = [
+  CLIENT_URL,
+  "http://localhost:5173",
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow tools/curl/postman
+
+      const cleanOrigin = origin.trim();
+
+      if (allowedOrigins.includes(cleanOrigin)) {
+        callback(null, true);
+      } else {
+        console.log("❌ BLOCKED ORIGIN:", cleanOrigin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
 
-// Mongo Connection
+// ------------------------------------------------------------------------------------
+// MongoDB Connection
+// ------------------------------------------------------------------------------------
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -30,10 +54,14 @@ mongoose
     process.exit(1);
   });
 
-// --- Default Route ---
-app.get("/", (req, res) => res.send("🔥 Backend running!"));
+// ------------------------------------------------------------------------------------
+// Default Test Route
+// ------------------------------------------------------------------------------------
+app.get("/", (req, res) => res.send("🔥 Backend running on Render!"));
 
-// --- ROUTES ---
+// ------------------------------------------------------------------------------------
+// Routes
+// ------------------------------------------------------------------------------------
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const adminRoutes = require("./routes/admin");
@@ -41,24 +69,24 @@ const progressRoutes = require("./routes/progress");
 const tasksRoutes = require("./routes/tasks");
 const mealsRoutes = require("./routes/meals.routes");
 
-// 🔥 These two are IMPORTANT
+// AI Routes
 const aiRoutes = require("./routes/aiRoutes");
 const aiSuggestions = require("./routes/aiSuggestions");
 
-// --- USE ROUTES ---
+// Use Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/tasks", tasksRoutes);
 app.use("/api/meals", mealsRoutes);
-
-// 🔥 MOUNT BOTH AI ROUTES UNDER /api/ai
 app.use("/api/ai", aiRoutes);
 app.use("/api/ai", aiSuggestions);
 
-// --- START SERVER ---
+// ------------------------------------------------------------------------------------
+// Start Server
+// ------------------------------------------------------------------------------------
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on http://localhost:${PORT}`)
-);
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
