@@ -11,7 +11,7 @@ export default function AuthProvider({ children }) {
   useEffect(() => {
     const check = async () => {
       try {
-        const res = await API.get("/auth/me");
+        const res = await API.get("/user/me");
         setUser(res.data.user);
       } catch (err) {
         setUser(null);
