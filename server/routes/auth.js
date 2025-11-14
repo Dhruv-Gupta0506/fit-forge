@@ -4,14 +4,14 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const axios = require("axios");
 const User = require("../models/User");
-const nodemailer = require("nodemailer");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const JWT_EXPIRES = 7 * 24 * 60 * 60 * 1000;
 const isProduction = process.env.NODE_ENV === "production";
 
-//-------------------- OTP HELPERS --------------------
+// -------------------- OTP HELPERS --------------------
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -20,29 +20,35 @@ function hashOtp(otp) {
   return crypto.createHash("sha256").update(otp).digest("hex");
 }
 
-//-------------------- SEND EMAIL (BREVO SMTP) --------------------
+// -------------------- SEND EMAIL (BREVO HTTP API) --------------------
 async function sendOtpEmail(email, otp) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  try {
+    const payload = {
+      sender: { name: "FitForge", email: process.env.SENDER_EMAIL },
+      to: [{ email }],
+      subject: "Your FitForge OTP Code",
+      htmlContent: `
+        <h2>Your OTP is <b>${otp}</b></h2>
+        <p>This OTP expires in <b>10 minutes</b>.</p>
+      `,
+    };
 
-  await transporter.sendMail({
-    from: `"FitForge" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: "Your FitForge OTP",
-    html: `
-      <h2>Your OTP is <b>${otp}</b></h2>
-      <p>This OTP expires in <b>10 minutes</b>.</p>
-    `,
-  });
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      payload,
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  console.log("📨 OTP SENT TO:", email);
+    console.log("📨 OTP SENT TO:", email);
+  } catch (err) {
+    console.error("❌ Brevo API Error:", err.response?.data || err.message);
+    throw new Error("Email sending failed");
+  }
 }
 
 // =========================================================
@@ -51,8 +57,8 @@ async function sendOtpEmail(email, otp) {
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
     const existingUser = await User.findOne({ email: email.toLowerCase() });
+
     if (existingUser)
       return res.status(400).json({ message: "User already exists" });
 
@@ -78,18 +84,16 @@ router.post("/register", async (req, res) => {
 });
 
 // =========================================================
-// VERIFY OTP (EMAIL VERIFICATION)
+// VERIFY OTP
 // =========================================================
 router.post("/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
-
     const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) return res.status(400).json({ message: "User not found" });
 
+    if (!user) return res.status(400).json({ message: "User not found" });
     if (hashOtp(otp) !== user.otpHash)
       return res.status(400).json({ message: "Invalid OTP" });
-
     if (Date.now() > user.otpExpiresAt)
       return res.status(400).json({ message: "OTP expired" });
 
@@ -173,15 +177,15 @@ router.get("/me", authMiddleware, async (req, res) => {
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
-
     const user = await User.findOne({ email: email.toLowerCase() });
+
     if (!user) return res.status(400).json({ message: "User not found" });
 
     const otp = generateOtp();
     user.otpHash = hashOtp(otp);
     user.otpExpiresAt = Date.now() + 10 * 60 * 1000;
-
     await user.save();
+
     await sendOtpEmail(email, otp);
 
     res.json({ message: "OTP sent", email });
@@ -203,7 +207,6 @@ router.post("/reset-otp", async (req, res) => {
 
     if (hashOtp(otp) !== user.otpHash)
       return res.status(400).json({ message: "Invalid OTP" });
-
     if (Date.now() > user.otpExpiresAt)
       return res.status(400).json({ message: "OTP expired" });
 
@@ -229,7 +232,6 @@ router.post("/reset-password", async (req, res) => {
 
     user.otpHash = null;
     user.otpExpiresAt = null;
-
     await user.save();
 
     res.json({ message: "Password reset successful" });
