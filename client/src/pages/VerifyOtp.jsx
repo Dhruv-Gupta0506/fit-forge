@@ -68,11 +68,9 @@ export default function VerifyOtp() {
       // SUCCESS ANIMATION
       setSuccess(true);
 
-      // go to reset-password page with otp + email
+      // after verification → go to dashboard
       setTimeout(() => {
-        navigate("/reset-password", {
-          state: { email, otp: fullOtp },
-        });
+        navigate("/dashboard");
       }, 500);
     } catch (err) {
       setShake(true);
@@ -103,9 +101,7 @@ export default function VerifyOtp() {
       setSuccess(true);
 
       setTimeout(() => {
-        navigate("/reset-password", {
-          state: { email, otp: fullOtp },
-        });
+        navigate("/dashboard");
       }, 500);
     } catch (err) {
       setShake(true);
@@ -124,39 +120,25 @@ export default function VerifyOtp() {
     }
   }
 
-  // RESEND OTP
+  // RESEND OTP → currently disabled (backend missing endpoint)
   async function resendOtp() {
-    if (!canResend) return;
-
-    try {
-      await API.post("/auth/resend-otp", { email });
-      alert("OTP resent to your email");
-
-      setTimer(30);
-      setCanResend(false);
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to resend OTP");
-    }
+    alert("Resend OTP not available yet.");
   }
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center bg-black overflow-hidden">
 
-      {/* BACKGROUND IMAGE */}
       <img
         src="/otp.png"
         alt="OTP Background"
         className="absolute inset-0 w-full h-full object-cover opacity-80 pointer-events-none"
       />
 
-      {/* DARK OVERLAY */}
       <div className="absolute inset-0 bg-black/70"></div>
 
-      {/* GLOWS */}
       <div className="absolute top-10 left-10 w-[280px] h-[280px] bg-blue-600/25 blur-[150px]"></div>
       <div className="absolute bottom-10 right-10 w-[260px] h-[260px] bg-purple-600/25 blur-[150px]"></div>
 
-      {/* OTP CARD */}
       <form
         onSubmit={handleVerify}
         className={`
@@ -171,7 +153,6 @@ export default function VerifyOtp() {
         `}
       >
 
-        {/* SHAKE ANIMATION */}
         <style>
           {`
             @keyframes shake {
@@ -184,7 +165,6 @@ export default function VerifyOtp() {
           `}
         </style>
 
-        {/* HEADING */}
         <h2
           className="
             text-3xl sm:text-4xl font-extrabold text-center mb-3
@@ -206,7 +186,6 @@ export default function VerifyOtp() {
           </p>
         )}
 
-        {/* OTP INPUT BOXES */}
         <div className="flex justify-center gap-2 sm:gap-3 mb-6">
           {otp.map((digit, index) => (
             <input
@@ -230,7 +209,6 @@ export default function VerifyOtp() {
           ))}
         </div>
 
-        {/* VERIFY BUTTON */}
         <button
           type="submit"
           disabled={loading}
@@ -246,7 +224,6 @@ export default function VerifyOtp() {
           {loading ? "Verifying..." : "Verify OTP"}
         </button>
 
-        {/* RESEND BUTTON */}
         <button
           type="button"
           onClick={resendOtp}

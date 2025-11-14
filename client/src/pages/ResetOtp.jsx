@@ -58,7 +58,7 @@ export default function ResetOtp() {
     setMessage("");
 
     try {
-      await API.post("/auth/verify-reset-otp", { email, otp: fullOtp });
+      await API.post("/auth/reset-otp", { email, otp: fullOtp });
 
       setSuccess(true);
 
@@ -91,7 +91,7 @@ export default function ResetOtp() {
     setMessage("");
 
     try {
-      await API.post("/auth/verify-reset-otp", { email, otp: fullOtp });
+      await API.post("/auth/reset-otp", { email, otp: fullOtp });
 
       setSuccess(true);
 
