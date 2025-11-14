@@ -3,24 +3,31 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true
+    },
 
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
-      trim: true,
+      trim: true
     },
 
-    password: { type: String, required: true },
+    password: {
+      type: String,
+      required: [true, "Password is required"]
+    },
 
-    // OTP
-    otpHash: { type: String, default: null },
-    otpExpiresAt: { type: Date, default: null },
+    // OTP Fields
+    otpHash: { type: String },
+    otpExpiresAt: { type: Date },
     isVerified: { type: Boolean, default: false },
 
-    // Profile
+    // User profile fields
     age: { type: Number, default: null },
     gender: { type: String, enum: ["Male", "Female", "Other"], default: null },
     height: { type: Number, default: null },
@@ -28,41 +35,42 @@ const userSchema = new mongoose.Schema(
     goal: {
       type: String,
       enum: ["Maintenance", "Cutting", "Bulking"],
-      default: null,
+      default: null
     },
 
-    // Game System
     points: { type: Number, default: 0 },
     title: { type: String, default: "Rookie" },
     level: { type: Number, default: 1 },
     streak: { type: Number, default: 0 },
 
-    // DEFAULT STATIC TASKS
+    // ------------------------------
+    // DAILY TASKS (BACKWARD SAFE)
+    // ------------------------------
     dailyTasks: {
       type: [
         {
-          name: { type: String, required: true },
+          name: { type: String },     // new format
+          task: { type: String },     // old format
           done: { type: Boolean, default: false },
-          points: { type: Number, default: 10 },
-        },
+          points: { type: Number, default: 10 }
+        }
       ],
       default: [
         { name: "Workout", done: false, points: 10 },
         { name: "Meal Logging", done: false, points: 5 },
-        { name: "Meditation", done: false, points: 5 },
-      ],
+        { name: "Meditation", done: false, points: 5 }
+      ]
     },
 
-    // User-added categories
     workouts: {
       type: [
         {
           name: { type: String, required: true },
           done: { type: Boolean, default: false },
-          points: { type: Number, default: 10 },
-        },
+          points: { type: Number, default: 10 }
+        }
       ],
-      default: [],
+      default: []
     },
 
     meals: {
@@ -70,10 +78,10 @@ const userSchema = new mongoose.Schema(
         {
           name: { type: String, required: true },
           done: { type: Boolean, default: false },
-          points: { type: Number, default: 5 },
-        },
+          points: { type: Number, default: 5 }
+        }
       ],
-      default: [],
+      default: []
     },
 
     meditations: {
@@ -81,37 +89,49 @@ const userSchema = new mongoose.Schema(
         {
           name: { type: String, required: true },
           done: { type: Boolean, default: false },
-          points: { type: Number, default: 5 },
-        },
+          points: { type: Number, default: 5 }
+        }
       ],
-      default: [],
+      default: []
     },
 
-    // Daily random tasks
     todayTasks: {
       type: [
         {
           name: String,
-          done: { type: Boolean, default: false },
-        },
+          done: { type: Boolean, default: false }
+        }
       ],
-      default: [],
+      default: []
     },
 
-    lastTaskRefresh: { type: Date, default: null },
+    lastTaskRefresh: { type: Date },
+    createdAt: { type: Date, default: Date.now }
   },
   { timestamps: true }
 );
 
-// --------------------------------------
-// HASH PASSWORD
-// --------------------------------------
+// ------------------------------------------------------
+// FIX OLD USERS (task → name)
+// ------------------------------------------------------
+userSchema.pre("validate", function (next) {
+  if (Array.isArray(this.dailyTasks)) {
+    this.dailyTasks = this.dailyTasks.map((d) => ({
+      name: d.name || d.task,           // convert old → new
+      done: d.done ?? false,
+      points: d.points ?? 10
+    }));
+  }
+  next();
+});
+
+// ------------------------------------------------------
+// PASSWORD HASHING (NO DOUBLE HASHING)
+// ------------------------------------------------------
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-
   next();
 });
 
@@ -120,4 +140,5 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.models.User || mongoose.model("User", userSchema);
+module.exports =
+  mongoose.models.User || mongoose.model("User", userSchema);
