@@ -133,7 +133,6 @@ export default function ResetOtp() {
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center bg-black overflow-hidden">
 
-      {/* BACKGROUND IMAGE (FULLY VISIBLE) */}
       <img
         src="/reotp.png"
         alt="Reset OTP Background"
@@ -145,14 +144,11 @@ export default function ResetOtp() {
         "
       />
 
-      {/* CONTROLLED DARK OVERLAY (NOT HIDING IMAGE) */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/65 to-black/40"></div>
 
-      {/* BLUE & PURPLE SOFT GLOW */}
       <div className="absolute top-10 left-10 w-[280px] h-[280px] bg-blue-600/25 blur-[150px]"></div>
       <div className="absolute bottom-10 right-10 w-[260px] h-[260px] bg-purple-600/25 blur-[150px]"></div>
 
-      {/* OTP CARD */}
       <form
         onSubmit={handleVerify}
         className={`
@@ -166,7 +162,6 @@ export default function ResetOtp() {
         `}
       >
 
-        {/* SHAKE ANIMATION */}
         <style>
           {`
             @keyframes shake {
@@ -179,16 +174,13 @@ export default function ResetOtp() {
           `}
         </style>
 
-        {/* TITLE */}
         <h2
           className="
             text-3xl sm:text-4xl font-extrabold text-center mb-3
             bg-gradient-to-r from-blue-300 via-purple-300 to-blue-300
             bg-clip-text text-transparent
           "
-          style={{
-            textShadow: "0 0 16px rgba(90,140,255,0.55)",
-          }}
+          style={{ textShadow: "0 0 16px rgba(90,140,255,0.55)" }}
         >
           Verify OTP
         </h2>
@@ -203,7 +195,6 @@ export default function ResetOtp() {
           </p>
         )}
 
-        {/* OTP INPUTS */}
         <div className="flex justify-center gap-2 sm:gap-3 mb-6">
           {otp.map((digit, index) => (
             <input
@@ -226,7 +217,6 @@ export default function ResetOtp() {
           ))}
         </div>
 
-        {/* VERIFY BUTTON */}
         <button
           disabled={loading}
           className="
@@ -241,7 +231,6 @@ export default function ResetOtp() {
           {loading ? "Verifying..." : "Verify OTP"}
         </button>
 
-        {/* RESEND BUTTON */}
         <button
           type="button"
           onClick={resendOtp}
