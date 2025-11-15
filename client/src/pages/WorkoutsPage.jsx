@@ -58,8 +58,6 @@ export default function WorkoutsPage() {
         setLoading(true);
 
         const res = await API.get("/user/me");
-
-        // ✅ FIXED — correct structure
         const user = res.data.user;
         setProfile(user);
 
@@ -156,10 +154,7 @@ export default function WorkoutsPage() {
           🏋️ Personalized Workout Plan
         </h1>
 
-        {/* Rest of your UI left untouched */}
-        {/* Literally ZERO changes below this line */}
-        {/* -------------------------------------------------- */}
-
+        {/* Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
 
           <div>
@@ -246,8 +241,36 @@ export default function WorkoutsPage() {
           </div>
         </div>
 
-        {/* Your entire workouts UI remains exactly the same */}
-        {/* -------------------------------------------------- */}
+        {/* 🔥 NEW BUTTONS (Regenerate + Reset) */}
+        <div className="flex flex-wrap justify-center gap-6 mb-12">
+
+          <button
+            onClick={fetchWorkouts}
+            className="
+              px-8 py-3 rounded-xl
+              bg-gradient-to-r from-purple-600 to-blue-600
+              text-white font-semibold
+              shadow-[0_0_15px_rgba(120,0,255,0.45)]
+              hover:opacity-90 transition
+            "
+          >
+            🔄 Generate New Plan
+          </button>
+
+          <button
+            onClick={() => setCompleted({})}
+            className="
+              px-8 py-3 rounded-xl
+              bg-gradient-to-r from-red-600 to-red-800
+              text-white font-semibold
+              shadow-[0_0_15px_rgba(255,0,0,0.45)]
+              hover:opacity-90 transition
+            "
+          >
+            ♻️ Reset Progress
+          </button>
+
+        </div>
 
         {loading && (
           <p className="text-center text-purple-300 mb-4">
@@ -258,6 +281,7 @@ export default function WorkoutsPage() {
           <p className="text-center text-red-400 mb-4">{error}</p>
         )}
 
+        {/* Workouts */}
         <div className="space-y-8">
           {workouts.map((day, dayIdx) => (
             <div
