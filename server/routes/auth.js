@@ -6,10 +6,18 @@ const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const JWT_EXPIRES = 7 * 24 * 60 * 60 * 1000;
-const isProduction = process.env.NODE_ENV === "production";
+
+// Dynamic cookie options for all browsers + iOS
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production", 
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  path: "/",
+  maxAge: JWT_EXPIRES,
+};
 
 // =========================================================
-// REGISTER (AUTO-LOGIN AFTER REGISTER)
+// REGISTER (AUTO-LOGIN)
 // =========================================================
 router.post("/register", async (req, res) => {
   try {
@@ -17,8 +25,7 @@ router.post("/register", async (req, res) => {
     const { name, password } = req.body;
 
     const exists = await User.findOne({ email });
-    if (exists)
-      return res.status(400).json({ message: "User already exists" });
+    if (exists) return res.status(400).json({ message: "User already exists" });
 
     const user = await User.create({
       name,
@@ -27,17 +34,11 @@ router.post("/register", async (req, res) => {
       isVerified: true,
     });
 
-    // 🔥 AUTO LOGIN RIGHT AFTER REGISTER
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    res.cookie("accessToken", token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: JWT_EXPIRES,
-    });
+    res.cookie("accessToken", token, cookieOptions);
 
     res.json({ user });
 
@@ -56,23 +57,16 @@ router.post("/login", async (req, res) => {
     const password = req.body.password;
 
     const user = await User.findOne({ email });
-    if (!user)
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    res.cookie("accessToken", token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: JWT_EXPIRES,
-    });
+    res.cookie("accessToken", token, cookieOptions);
 
     res.json({ user });
 
@@ -88,8 +82,7 @@ router.post("/login", async (req, res) => {
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json({ user });
 

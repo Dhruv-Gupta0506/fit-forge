@@ -32,7 +32,7 @@ app.use((req, res, next) => {
 });
 
 // -------------------------------------------------------------
-// FIXED CORS
+// FIXED CORS (Safari + iOS compatible)
 // -------------------------------------------------------------
 app.use(
   cors({
@@ -49,6 +49,8 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],   // ✅ required for iOS
+    allowedHeaders: ["Content-Type"],            // keep simple
     optionsSuccessStatus: 200,
   })
 );
