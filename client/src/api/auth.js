@@ -11,7 +11,7 @@ export const registerUser = async (data) => {
         email: data.email,
         password: data.password,
       },
-      { withCredentials: true } // important on some browsers
+      { withCredentials: true }
     );
 
     return res.data;
@@ -29,7 +29,7 @@ export const loginUser = async (data) => {
         email: data.email,
         password: data.password,
       },
-      { withCredentials: true }   // 🔥 REQUIRED FIX
+      { withCredentials: true }
     );
 
     return res.data;
