@@ -4,11 +4,9 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const JWT_EXPIRES = 7 * 24 * 60 * 60 * 1000;
 const isProduction = process.env.NODE_ENV === "production";
@@ -22,11 +20,22 @@ function hashOtp(otp) {
   return crypto.createHash("sha256").update(String(otp)).digest("hex");
 }
 
-// -------------------- SEND EMAIL USING RESEND --------------------
+// -------------------- SMTP TRANSPORT (GMAIL) --------------------
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: true, // Gmail uses SSL on port 465
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+// -------------------- SEND EMAIL USING SMTP --------------------
 async function sendOtpEmail(email, otp) {
   try {
-    await resend.emails.send({
-      from: `FitForge <${process.env.SENDER_EMAIL}>`,
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
       to: email,
       subject: "Your FitForge OTP",
       html: `
@@ -37,7 +46,7 @@ async function sendOtpEmail(email, otp) {
 
     console.log("📨 OTP SENT TO:", email);
   } catch (err) {
-    console.error("❌ Resend Error:", err);
+    console.error("❌ SMTP Error:", err);
     throw new Error("Email sending failed");
   }
 }
@@ -193,7 +202,7 @@ router.post("/reset-otp", async (req, res) => {
 });
 
 // =========================================================
-// RESET PASSWORD (NO DOUBLE HASHING)
+// RESET PASSWORD
 // =========================================================
 router.post("/reset-password", async (req, res) => {
   try {
@@ -203,7 +212,6 @@ router.post("/reset-password", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
-    // DO NOT HASH HERE (schema handles hashing)
     user.password = newPassword;
     user.otpHash = null;
     user.otpExpiresAt = null;
@@ -213,6 +221,21 @@ router.post("/reset-password", async (req, res) => {
     res.json({ message: "Password reset successful" });
   } catch (err) {
     console.error("❌ Reset Password Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =========================================================
+// 🔥 AUTH CHECK (AUTO-LOGIN)
+// =========================================================
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ user });
+  } catch (err) {
+    console.error("❌ /me Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
