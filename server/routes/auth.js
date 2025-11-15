@@ -1,121 +1,34 @@
 require("dotenv").config();
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const JWT_EXPIRES = 7 * 24 * 60 * 60 * 1000;
 const isProduction = process.env.NODE_ENV === "production";
 
-// -------------------- OTP HELPERS --------------------
-function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-function hashOtp(otp) {
-  return crypto.createHash("sha256").update(String(otp)).digest("hex");
-}
-
-// -------------------- SMTP TRANSPORT (GMAIL) --------------------
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: true, // Gmail uses SSL on port 465
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-// -------------------- SEND EMAIL USING SMTP --------------------
-async function sendOtpEmail(email, otp) {
-  try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: "Your FitForge OTP",
-      html: `
-        <h2>Your OTP is <b>${otp}</b></h2>
-        <p>This OTP expires in <b>10 minutes</b>.</p>
-      `,
-    });
-
-    console.log("📨 OTP SENT TO:", email);
-  } catch (err) {
-    console.error("❌ SMTP Error:", err);
-    throw new Error("Email sending failed");
-  }
-}
-
 // =========================================================
-// REGISTER
+// REGISTER (NO OTP, NO EXTRA STEPS)
 // =========================================================
 router.post("/register", async (req, res) => {
   try {
     const email = req.body.email.toLowerCase();
+    const { name, password } = req.body;
 
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "User already exists" });
 
     const user = await User.create({
-      name: req.body.name,
+      name,
       email,
-      password: req.body.password,
-      isVerified: false,
+      password,
+      isVerified: true, // always true since no OTP
     });
 
-    const otp = generateOtp();
-    user.otpHash = hashOtp(otp);
-    user.otpExpiresAt = Date.now() + 10 * 60 * 1000;
-
-    await user.save();
-    await sendOtpEmail(email, otp);
-
-    res.json({ message: "OTP sent", email });
+    res.json({ message: "Registration successful", user });
   } catch (err) {
     console.error("❌ Registration Error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// =========================================================
-// VERIFY OTP (REGISTER)
-// =========================================================
-router.post("/verify-otp", async (req, res) => {
-  try {
-    const email = req.body.email.toLowerCase();
-    const otp = String(req.body.otp).trim();
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
-
-    if (hashOtp(otp) !== user.otpHash)
-      return res.status(400).json({ message: "Invalid OTP" });
-
-    if (Date.now() > user.otpExpiresAt)
-      return res.status(400).json({ message: "OTP expired" });
-
-    user.isVerified = true;
-    user.otpHash = null;
-    user.otpExpiresAt = null;
-    await user.save();
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-    res.cookie("accessToken", token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: JWT_EXPIRES,
-    });
-
-    res.json({ message: "OTP verified", user });
-  } catch (err) {
-    console.error("❌ Verify OTP Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -131,13 +44,12 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    if (!user.isVerified)
-      return res.status(401).json({ message: "Please verify your email first" });
-
     const isMatch = await user.matchPassword(password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     res.cookie("accessToken", token, {
       httpOnly: true,
@@ -154,79 +66,7 @@ router.post("/login", async (req, res) => {
 });
 
 // =========================================================
-// FORGOT PASSWORD
-// =========================================================
-router.post("/forgot-password", async (req, res) => {
-  try {
-    const email = req.body.email.toLowerCase();
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
-
-    const otp = generateOtp();
-    user.otpHash = hashOtp(otp);
-    user.otpExpiresAt = Date.now() + 10 * 60 * 1000;
-    await user.save();
-
-    await sendOtpEmail(email, otp);
-
-    res.json({ message: "OTP sent", email });
-  } catch (err) {
-    console.error("❌ Forgot Password Error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// =========================================================
-// VERIFY RESET OTP
-// =========================================================
-router.post("/reset-otp", async (req, res) => {
-  try {
-    const email = req.body.email.toLowerCase();
-    const otp = String(req.body.otp).trim();
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
-
-    if (hashOtp(otp) !== user.otpHash)
-      return res.status(400).json({ message: "Invalid OTP" });
-
-    if (Date.now() > user.otpExpiresAt)
-      return res.status(400).json({ message: "OTP expired" });
-
-    res.json({ message: "OTP verified" });
-  } catch (err) {
-    console.error("❌ Reset OTP Error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// =========================================================
-// RESET PASSWORD
-// =========================================================
-router.post("/reset-password", async (req, res) => {
-  try {
-    const email = req.body.email.toLowerCase();
-    const newPassword = req.body.newPassword;
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
-
-    user.password = newPassword;
-    user.otpHash = null;
-    user.otpExpiresAt = null;
-
-    await user.save();
-
-    res.json({ message: "Password reset successful" });
-  } catch (err) {
-    console.error("❌ Reset Password Error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// =========================================================
-// 🔥 AUTH CHECK (AUTO-LOGIN)
+// AUTH CHECK (AUTO LOGIN)
 // =========================================================
 router.get("/me", authMiddleware, async (req, res) => {
   try {

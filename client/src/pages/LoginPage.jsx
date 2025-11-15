@@ -20,17 +20,12 @@ export default function LoginPage() {
     const res = await loginUser(form);
 
     if (res.error) {
-      if (res.error === "Please verify your email first") {
-        return navigate("/verify-otp", { state: { email: form.email } });
-      }
       setError(res.error);
       setLoading(false);
       return;
     }
 
-    // 🔥 THIS IS THE MAIN FIX
-    // navigate() DOES NOT cause cookies to attach immediately.
-    // A hard reload forces browser to include the new cookie.
+    // Hard reload to attach cookies properly
     window.location.href = "/dashboard";
   };
 
@@ -126,14 +121,7 @@ export default function LoginPage() {
             </span>
           </div>
 
-          <div className="text-right mb-6">
-            <Link
-              to="/forgot-password"
-              className="text-blue-400 text-sm hover:underline"
-            >
-              Forgot Password?
-            </Link>
-          </div>
+          {/* Removed Forgot Password link */}
 
           <button
             type="submit"

@@ -29,11 +29,8 @@ export default function MealsPage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const res = await API.get("/user/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // 🔥 FIXED — no Authorization header, cookie is enough
+        const res = await API.get("/user/me");
 
         setProfile(res.data);
 
@@ -55,11 +52,8 @@ export default function MealsPage() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-
-      const res = await API.get(`/meals?diet=${diet}&phase=${phase}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // 🔥 FIXED — no headers
+      const res = await API.get(`/meals?diet=${diet}&phase=${phase}`);
 
       setMeals(res.data.meals || []);
     } catch (err) {
@@ -137,9 +131,11 @@ export default function MealsPage() {
           <button
             className={`
               px-6 py-2 rounded-xl font-semibold transition
-              ${diet === "Veg"
-                ? "bg-green-600 text-white shadow-[0_0_10px_rgba(0,255,120,0.4)]"
-                : "bg-white/10 text-gray-300 border border-white/20 hover:bg-white/20"}
+              ${
+                diet === "Veg"
+                  ? "bg-green-600 text-white shadow-[0_0_10px_rgba(0,255,120,0.4)]"
+                  : "bg-white/10 text-gray-300 border border-white/20 hover:bg-white/20"
+              }
             `}
             onClick={() => setDiet("Veg")}
           >
@@ -149,9 +145,11 @@ export default function MealsPage() {
           <button
             className={`
               px-6 py-2 rounded-xl font-semibold transition
-              ${diet === "Non-Veg"
-                ? "bg-green-600 text-white shadow-[0_0_10px_rgba(0,255,120,0.4)]"
-                : "bg-white/10 text-gray-300 border border-white/20 hover:bg-white/20"}
+              ${
+                diet === "Non-Veg"
+                  ? "bg-green-600 text-white shadow-[0_0_10px_rgba(0,255,120,0.4)]"
+                  : "bg-white/10 text-gray-300 border border-white/20 hover:bg-white/20"
+              }
             `}
             onClick={() => setDiet("Non-Veg")}
           >

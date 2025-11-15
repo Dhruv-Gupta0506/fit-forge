@@ -22,11 +22,6 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"]
     },
 
-    // OTP Fields
-    otpHash: { type: String },
-    otpExpiresAt: { type: Date },
-    isVerified: { type: Boolean, default: false },
-
     // User profile fields
     age: { type: Number, default: null },
     gender: { type: String, enum: ["Male", "Female", "Other"], default: null },
@@ -44,13 +39,13 @@ const userSchema = new mongoose.Schema(
     streak: { type: Number, default: 0 },
 
     // ------------------------------
-    // DAILY TASKS (BACKWARD SAFE)
+    // DAILY TASKS
     // ------------------------------
     dailyTasks: {
       type: [
         {
-          name: { type: String },     // new format
-          task: { type: String },     // old format
+          name: { type: String },
+          task: { type: String },
           done: { type: Boolean, default: false },
           points: { type: Number, default: 10 }
         }
@@ -117,7 +112,7 @@ const userSchema = new mongoose.Schema(
 userSchema.pre("validate", function (next) {
   if (Array.isArray(this.dailyTasks)) {
     this.dailyTasks = this.dailyTasks.map((d) => ({
-      name: d.name || d.task,           // convert old → new
+      name: d.name || d.task,
       done: d.done ?? false,
       points: d.points ?? 10
     }));
@@ -126,7 +121,7 @@ userSchema.pre("validate", function (next) {
 });
 
 // ------------------------------------------------------
-// PASSWORD HASHING (NO DOUBLE HASHING)
+// PASSWORD HASHING
 // ------------------------------------------------------
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

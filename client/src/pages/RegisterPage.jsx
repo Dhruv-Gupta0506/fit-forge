@@ -22,9 +22,8 @@ export default function RegisterPage() {
     if (res.error) {
       setError(res.error);
     } else {
-      // 🔥 IMPORTANT: Do NOT save token here. Cookie is handled by backend.
-      alert("OTP sent to your email. Please verify.");
-      navigate("/verify-otp", { state: { email: form.email } });
+      // ✔️ New user goes directly to dashboard now
+      window.location.href = "/dashboard";
     }
 
     setLoading(false);
@@ -64,7 +63,7 @@ export default function RegisterPage() {
           border border-blue-500/40
           shadow-[0_0_25px_rgba(0,120,255,0.4)]
         "
-        style={{ marginTop: "-40px" }} // lifts form slightly
+        style={{ marginTop: "-40px" }}
       >
         {/* Header */}
         <h2

@@ -9,26 +9,12 @@ import SuggestWorkoutsPage from "./pages/WorkoutsPage";
 import SuggestMealsPage from "./pages/MealsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// OTP Pages
-import VerifyOtp from "./pages/VerifyOtp";
-
-// Forgot Password Pages
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetOtp from "./pages/ResetOtp";
-import ResetPassword from "./pages/ResetPassword";
-
 function App() {
   return (
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/verify-otp" element={<VerifyOtp />} />
-
-      {/* Forgot Password Flow */}
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-otp" element={<ResetOtp />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Protected Routes */}
       <Route

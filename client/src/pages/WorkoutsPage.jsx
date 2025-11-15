@@ -18,10 +18,10 @@ function mapUserLevel(xpLevel) {
 
 export default function WorkoutsPage() {
   const [profile, setProfile] = useState(null);
-  const [workouts, setWorkouts] = useState([]);
-  const [meta, setMeta] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  the [workouts, setWorkouts] = useState([]);
+  the [meta, setMeta] = useState(null);
+  the [loading, setLoading] = useState(false);
+  the [error, setError] = useState("");
 
   const [location, setLocation] = useState("Gym");
   const [goal, setGoal] = useState("Maintenance");
@@ -57,10 +57,8 @@ export default function WorkoutsPage() {
       try {
         setLoading(true);
 
-        const token = localStorage.getItem("token");
-        const res = await API.get("/user/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // 🔥 FIXED — cookie auth, no headers
+        const res = await API.get("/user/me");
 
         setProfile(res.data);
 
@@ -86,8 +84,6 @@ export default function WorkoutsPage() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-
       const params = new URLSearchParams({
         location,
         goal,
@@ -96,9 +92,8 @@ export default function WorkoutsPage() {
         days: String(days),
       });
 
-      const res = await API.get(`/ai/workouts?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // 🔥 FIXED — cookie auth, no Authorization
+      const res = await API.get(`/ai/workouts?${params.toString()}`);
 
       setWorkouts(res.data.workouts);
       setMeta(res.data.meta);
@@ -135,7 +130,6 @@ export default function WorkoutsPage() {
   return (
     <div className="relative min-h-screen w-full overflow-hidden flex justify-center bg-black">
 
-      {/* BACKGROUND IMAGE */}
       <img
         src="/workout.png"
         className="
@@ -145,10 +139,8 @@ export default function WorkoutsPage() {
         "
       />
 
-      {/* OVERLAY */}
       <div className="absolute inset-0 bg-black/60"></div>
 
-      {/* MAIN CONTENT */}
       <div
         className="
           relative z-20 w-full max-w-5xl 
@@ -158,7 +150,6 @@ export default function WorkoutsPage() {
           rounded-3xl p-6 sm:p-10 my-10
         "
       >
-        {/* HEADING */}
         <h1
           className="text-center text-4xl font-extrabold text-white mb-10"
           style={{ textShadow: "0 0 15px rgba(150,0,255,0.7)" }}
@@ -166,10 +157,8 @@ export default function WorkoutsPage() {
           🏋️ Personalized Workout Plan
         </h1>
 
-        {/* FILTERS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
 
-          {/* GOAL */}
           <div>
             <label className="text-sm text-purple-300">Goal</label>
             <select
@@ -186,7 +175,6 @@ export default function WorkoutsPage() {
             </select>
           </div>
 
-          {/* LEVEL */}
           <div>
             <label className="text-sm text-purple-300">Level</label>
             <select
@@ -203,7 +191,6 @@ export default function WorkoutsPage() {
             </select>
           </div>
 
-          {/* GENDER */}
           <div>
             <label className="text-sm text-purple-300">Gender</label>
             <select
@@ -220,7 +207,6 @@ export default function WorkoutsPage() {
             </select>
           </div>
 
-          {/* DAYS */}
           <div>
             <label className="text-sm text-purple-300">Days / Week</label>
             <input
@@ -240,7 +226,6 @@ export default function WorkoutsPage() {
             />
           </div>
 
-          {/* LOCATION */}
           <div>
             <label className="text-sm text-purple-300">Location</label>
             <select
@@ -258,7 +243,6 @@ export default function WorkoutsPage() {
           </div>
         </div>
 
-        {/* BUTTONS */}
         <div className="flex flex-wrap justify-center gap-4 mb-12">
           <button
             onClick={fetchWorkouts}
@@ -288,7 +272,6 @@ export default function WorkoutsPage() {
           </button>
         </div>
 
-        {/* LOADING & ERROR */}
         {loading && (
           <p className="text-center text-purple-300 mb-4">
             Loading workout plan…
@@ -298,7 +281,6 @@ export default function WorkoutsPage() {
           <p className="text-center text-red-400 mb-4">{error}</p>
         )}
 
-        {/* WORKOUT DAY CARDS */}
         <div className="space-y-8">
           {workouts.map((day, dayIdx) => (
             <div
@@ -384,7 +366,6 @@ export default function WorkoutsPage() {
           ))}
         </div>
 
-        {/* BACK BUTTON */}
         <div className="flex justify-center mt-12">
           <button
             onClick={() => navigate("/overview")}
