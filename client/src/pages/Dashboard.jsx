@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import API from "../api/axios";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // detect if user came to edit
+  // Detect editing mode properly
   const isEditing =
-    new URLSearchParams(window.location.search).get("edit") === "true";
+    new URLSearchParams(location.search).get("edit") === "true";
 
   const [profile, setProfile] = useState({
     age: "",
@@ -21,13 +22,14 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
+  // ===========================
   // FETCH PROFILE
+  // ===========================
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await API.get("/user/me");
-
-        const user = res.data.user; // 🔥 FIXED
+        const user = res.data.user;
 
         setProfile({
           age: user.age || "",
@@ -37,8 +39,8 @@ export default function Dashboard() {
           goal: user.goal || "",
         });
 
-        // if user is not editing & data already exists → saved mode (auto redirect)
-        if (user.age && user.goal && !isEditing) {
+        // Auto redirect ONLY if first time (not editing)
+        if (!isEditing && user.age && user.goal) {
           setSaved(true);
         }
       } catch (err) {
@@ -49,7 +51,9 @@ export default function Dashboard() {
     fetchProfile();
   }, [isEditing]);
 
-  // AUTO REDIRECT ONLY WHEN NOT EDITING
+  // ===========================
+  // AUTO REDIRECT (first time only)
+  // ===========================
   useEffect(() => {
     if (saved && !isEditing) {
       const t = setTimeout(() => navigate("/overview"), 1500);
@@ -57,9 +61,15 @@ export default function Dashboard() {
     }
   }, [saved, navigate, isEditing]);
 
+  // ===========================
+  // HANDLE CHANGE
+  // ===========================
   const handleChange = (e) =>
     setProfile({ ...profile, [e.target.name]: e.target.value });
 
+  // ===========================
+  // HANDLE SUBMIT
+  // ===========================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -67,7 +77,14 @@ export default function Dashboard() {
 
     try {
       await API.post("/user/me", profile);
-      setSaved(true);
+
+      if (isEditing) {
+        // 🔥 INSTANT redirect when editing
+        navigate("/overview");
+      } else {
+        // First-time flow
+        setSaved(true);
+      }
     } catch (err) {
       setError("❌ Failed to save profile.");
     }
@@ -75,6 +92,9 @@ export default function Dashboard() {
     setLoading(false);
   };
 
+  // ===========================
+  // BMI CALCULATION
+  // ===========================
   const bmi = useMemo(() => {
     if (!profile.height || !profile.weight) return null;
     const h = profile.height / 100;
@@ -89,15 +109,15 @@ export default function Dashboard() {
     return { label: "Obese 🚨", color: "text-red-400" };
   }, [bmi]);
 
+  // ===========================
+  // UI
+  // ===========================
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center overflow-hidden bg-black">
 
       <img
         src="/dashboard.png"
-        className="
-          absolute inset-0 w-full h-full
-          object-cover pointer-events-none opacity-90
-        "
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-90"
       />
 
       <div className="absolute inset-0 bg-black/60"></div>
@@ -107,42 +127,37 @@ export default function Dashboard() {
       <h1
         className="
           relative z-20 text-center text-4xl sm:text-5xl font-extrabold 
-          mt-14 mb-10 tracking-wide
-          bg-gradient-to-r from-blue-400 via-purple-300 to-blue-400
-          bg-clip-text text-transparent
+          mt-14 mb-10 tracking-wide bg-gradient-to-r 
+          from-blue-400 via-purple-300 to-blue-400 bg-clip-text 
+          text-transparent
         "
         style={{ textShadow: "0 0 16px rgba(150,100,255,0.45)" }}
       >
-        Your Fitness Dashboard
+        {isEditing ? "Edit Profile" : "Your Fitness Dashboard"}
       </h1>
 
       <div className="relative z-20 w-full max-w-3xl px-6 sm:px-8">
 
-        {/* Success message */}
-        {saved && (
+        {saved && !isEditing && (
           <p className="text-green-400 text-center font-medium mb-4 animate-pulse">
-            ✅ Profile saved {isEditing ? "" : "— redirecting..."}
+            ✅ Profile saved — redirecting...
           </p>
         )}
 
-        {/* FORM */}
-        {!saved || isEditing ? (
+        {(!saved || isEditing) && (
           <form
             onSubmit={handleSubmit}
             className="
-              bg-white/10 backdrop-blur-2xl
-              border border-blue-400/40 rounded-3xl 
-              shadow-[0_0_28px_rgba(100,140,255,0.35)]
+              bg-white/10 backdrop-blur-2xl border border-blue-400/40 
+              rounded-3xl shadow-[0_0_28px_rgba(100,140,255,0.35)]
               p-6 sm:p-10 space-y-6 text-white
             "
           >
             <h2
-              className="
-                text-xl sm:text-2xl font-semibold text-center mb-3
-              "
+              className="text-xl sm:text-2xl font-semibold text-center mb-3"
               style={{ textShadow: "0 0 6px rgba(100,150,255,0.35)" }}
             >
-              {isEditing ? "Edit Your Profile" : "Complete Your Fitness Profile"}
+              {isEditing ? "Edit Your Fitness Profile" : "Complete Your Fitness Profile"}
             </h2>
 
             {error && (
@@ -158,7 +173,7 @@ export default function Dashboard() {
                 name="age"
                 type="number"
                 required
-                placeholder="Enter age in years"
+                placeholder="Enter age (years)"
                 value={profile.age}
                 onChange={handleChange}
                 className="
@@ -179,7 +194,6 @@ export default function Dashboard() {
                 className="
                   w-full p-3 rounded-xl bg-black/50 border border-gray-600
                   focus:border-blue-400 focus:ring-2 focus:ring-blue-500
-                  appearance-none
                 "
               >
                 <option value="">Select Gender</option>
@@ -244,7 +258,6 @@ export default function Dashboard() {
                 className="
                   w-full p-3 rounded-xl bg-black/50 border border-gray-600
                   focus:border-blue-400 focus:ring-2 focus:ring-blue-500
-                  appearance-none
                 "
               >
                 <option value="">Select Fitness Goal</option>
@@ -266,18 +279,17 @@ export default function Dashboard() {
               type="submit"
               disabled={loading}
               className="
-                w-full py-3 rounded-xl
-                bg-gradient-to-r from-blue-600 to-purple-700
-                hover:from-blue-500 hover:to-purple-600
-                text-white font-semibold
-                active:scale-95 transition
+                w-full py-3 rounded-xl bg-gradient-to-r 
+                from-blue-600 to-purple-700 hover:from-blue-500 hover:to-purple-600
+                text-white font-semibold active:scale-95 transition
                 shadow-[0_0_18px_rgba(0,150,255,0.45)]
               "
             >
               {loading ? "Saving..." : "Save Profile"}
             </button>
+
           </form>
-        ) : null}
+        )}
       </div>
     </div>
   );
