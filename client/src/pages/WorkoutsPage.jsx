@@ -29,6 +29,9 @@ export default function WorkoutsPage() {
   const [gender, setGender] = useState("Other");
   const [days, setDays] = useState(3);
 
+  // 🔥 NEW
+  const [regen, setRegen] = useState(0);
+
   const navigate = useNavigate();
 
   const planSignature = useMemo(
@@ -77,7 +80,8 @@ export default function WorkoutsPage() {
     fetchProfile();
   }, []);
 
-  const fetchWorkouts = async () => {
+  // 🔥 UPDATED — sends regen to backend
+  const fetchWorkouts = async (regenValue = regen) => {
     setError("");
     setLoading(true);
 
@@ -88,6 +92,7 @@ export default function WorkoutsPage() {
         level,
         gender,
         days: String(days),
+        regen: String(regenValue), // 🔥 ADDED
       });
 
       const res = await API.get(`/ai/workouts?${params.toString()}`);
@@ -241,11 +246,17 @@ export default function WorkoutsPage() {
           </div>
         </div>
 
-        {/* 🔥 NEW BUTTONS (Regenerate + Reset) */}
+        {/* 🔥 UPDATED BUTTONS */}
         <div className="flex flex-wrap justify-center gap-6 mb-12">
 
           <button
-            onClick={fetchWorkouts}
+            onClick={() =>
+              setRegen((prev) => {
+                const next = prev + 1;
+                fetchWorkouts(next);
+                return next;
+              })
+            }
             className="
               px-8 py-3 rounded-xl
               bg-gradient-to-r from-purple-600 to-blue-600

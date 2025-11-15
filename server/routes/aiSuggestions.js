@@ -9,7 +9,8 @@ router.get("/workouts", auth, async (req, res) => {
       location = "Gym",
       goal = "Maintenance",
       level = "intermediate",
-      days = 3
+      days = 3,
+      regen = 0  // 🔥 IMPORTANT — capture regen
     } = req.query;
 
     const plan = await generateWorkoutPlan({
@@ -17,6 +18,7 @@ router.get("/workouts", auth, async (req, res) => {
       location,
       goal,
       level,
+      regen: Number(regen)  // 🔥 pass regen to generator
     });
 
     res.json({

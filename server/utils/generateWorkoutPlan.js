@@ -24,21 +24,18 @@ const PPL_TO_MUSCLES = {
   Legs: ["Legs","Core"],
 };
 
-// volume presets by level
 const VOLUME = {
   beginner:     { compounds: 1, isolations: 2, sets: 3, rest: "60s" },
   intermediate: { compounds: 2, isolations: 3, sets: 4, rest: "75s" },
   advanced:     { compounds: 3, isolations: 3, sets: 5, rest: "90s" },
 };
 
-// rep targets by goal
 const GOAL_REPS = {
   Bulking:      (isCompound) => isCompound ? "6-10" : "8-12",
   Cutting:      () => "12-20",
   Maintenance:  (isCompound) => isCompound ? "6-10" : "8-15",
 };
 
-// normalize level str
 function normalizeLevel(level) {
   const l = String(level || "").toLowerCase();
   if (l.startsWith("beg")) return "beginner";
@@ -47,12 +44,9 @@ function normalizeLevel(level) {
   return "intermediate";
 }
 
-// Build daily target muscles per level/days/location
 function buildSplit({ days, location, level }) {
   const lvl = normalizeLevel(level);
   const loc = location === "Home" ? "Home" : "Gym";
-
-  // cap days to 6
   const d = Math.max(1, Math.min(6, days || 3));
 
   if (lvl === "beginner") {
@@ -65,7 +59,6 @@ function buildSplit({ days, location, level }) {
     return Array.from({ length: d }).map((_, i) => pairs[i % pairs.length]);
   }
 
-  // advanced
   if (d === 4) {
     const pairs = INTERMEDIATE_BRO[loc];
     return Array.from({ length: d }).map((_, i) => pairs[i % pairs.length]);
@@ -83,6 +76,7 @@ function pickReps(goal, isCompound) {
   return fn(!!isCompound);
 }
 
+// seeded shuffle
 function seededShuffle(arr, seedStr) {
   const seed = [...seedStr].reduce((a,c)=> (a + c.charCodeAt(0))|0, 0) || 1;
   const a = arr.slice();
@@ -94,9 +88,13 @@ function seededShuffle(arr, seedStr) {
 }
 
 // Core generator
-async function generateWorkoutPlan({ days, location, level, goal }) {
+async function generateWorkoutPlan({ days, location, level, goal, regen }) {
   const lvl = normalizeLevel(level);
   const loc = location === "Home" ? "Home" : "Gym";
+
+  const today = new Date().toISOString().slice(0, 10);
+  const regenSeed = regen || 0;
+
   const split = buildSplit({ days, location: loc, level: lvl });
   const vol = VOLUME[lvl];
 
@@ -105,7 +103,6 @@ async function generateWorkoutPlan({ days, location, level, goal }) {
   for (let dayIdx = 0; dayIdx < split.length; dayIdx++) {
     const targetMuscles = split[dayIdx];
 
-    // ✅ FIXED: Query by muscleGroup
     const exercises = await Exercise.find({
       muscleGroup: { $in: targetMuscles },
       $or: [{ equipment: loc }, { equipment: "Both" }],
@@ -116,7 +113,6 @@ async function generateWorkoutPlan({ days, location, level, goal }) {
       continue;
     }
 
-    // group by muscleGroup
     const byMuscle = new Map();
     for (const ex of exercises) {
       const key = ex.muscleGroup;
@@ -129,26 +125,25 @@ async function generateWorkoutPlan({ days, location, level, goal }) {
     for (const m of targetMuscles) {
       const bucket = byMuscle.get(m) || { compounds: [], isolations: [] };
 
-      const cList = seededShuffle(bucket.compounds, `${m}-c-${lvl}-${goal}-${loc}-${days}`);
-      const iList = seededShuffle(bucket.isolations, `${m}-i-${lvl}-${goal}-${loc}-${days}`);
+      const seedBase = `${today}-${regenSeed}-${m}-${lvl}-${goal}-${loc}-${days}`;
+
+      const cList = seededShuffle(bucket.compounds, seedBase + "-C");
+      const iList = seededShuffle(bucket.isolations, seedBase + "-I");
 
       const muscleFactor = targetMuscles.length >= 2 ? 0.7 : 1;
       const nComp = Math.max(1, Math.round(vol.compounds * muscleFactor));
       const nIso  = Math.max(1, Math.round(vol.isolations * muscleFactor));
 
-      const chosen = [
-        ...cList.slice(0, nComp),
-        ...iList.slice(0, nIso),
-      ];
+      const chosen = [...cList.slice(0, nComp), ...iList.slice(0, nIso)];
 
       for (const ex of chosen) {
         dayWork.push({
           name: ex.name,
-          muscle: ex.muscleGroup, // ✅ FIXED OUTPUT FIELD
+          muscle: ex.muscleGroup,
           equipment: ex.equipment,
           sets: vol.sets,
           reps: pickReps(goal, ex.isCompound),
-          rest: ex.isCompound
+          rest: ex.isCompound 
             ? (lvl === "advanced" ? "120s" : vol.rest)
             : vol.rest,
           notes: "Progressive overload. Keep 1–3 reps in reserve.",
@@ -157,11 +152,9 @@ async function generateWorkoutPlan({ days, location, level, goal }) {
     }
 
     const maxPerDay = lvl === "advanced" ? 8 : lvl === "intermediate" ? 7 : 6;
-    const trimmed = dayWork.slice(0, maxPerDay);
-
     plan.push({
       day: `Day ${dayIdx + 1} — ${targetMuscles.join(" / ")}`,
-      exercises: trimmed,
+      exercises: dayWork.slice(0, maxPerDay),
     });
   }
 

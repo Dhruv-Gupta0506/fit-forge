@@ -1,5 +1,5 @@
 // src/pages/MealsPage.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import API from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
@@ -11,7 +11,14 @@ export default function MealsPage() {
   const [diet, setDiet] = useState("Veg");
   const [phase, setPhase] = useState("Cutting");
 
+  const [regen, setRegen] = useState(0); // 🔥 generate new meals button
+
   const navigate = useNavigate();
+
+  // 🔥 CHANGE EVERY DAY AUTOMATICALLY
+  const dailyKey = useMemo(() => {
+    return new Date().toISOString().slice(0, 10);
+  }, []);
 
   const goalToPhase = {
     "Weight Loss": "Cutting",
@@ -29,14 +36,15 @@ export default function MealsPage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // 🔥 FIXED — no Authorization header, cookie is enough
         const res = await API.get("/user/me");
 
-        setProfile(res.data);
+        // 🔥 FIXED
+        const user = res.data.user;
+        setProfile(user);
 
-        const mappedPhase = goalToPhase[res.data.goal] || "Maintenance";
+        const mappedPhase = goalToPhase[user.goal] || "Maintenance";
         setPhase(mappedPhase);
-        setDiet(res.data.dietPreference || "Veg");
+        setDiet(user.dietPreference || "Veg");
       } catch (err) {
         console.error("Error fetching profile:", err);
       }
@@ -52,8 +60,9 @@ export default function MealsPage() {
     setLoading(true);
 
     try {
-      // 🔥 FIXED — no headers
-      const res = await API.get(`/meals?diet=${diet}&phase=${phase}`);
+      const res = await API.get(
+        `/meals?diet=${diet}&phase=${phase}&day=${dailyKey}&regen=${regen}`
+      );
 
       setMeals(res.data.meals || []);
     } catch (err) {
@@ -65,7 +74,7 @@ export default function MealsPage() {
 
   useEffect(() => {
     if (profile) fetchMeals();
-  }, [diet, phase, profile]);
+  }, [diet, phase, profile, regen, dailyKey]);
 
   if (!profile || loading)
     return (
@@ -84,7 +93,6 @@ export default function MealsPage() {
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center overflow-x-hidden">
 
-      {/* BACKGROUND IMAGE */}
       <img
         src="/food.png"
         alt="Meals Background"
@@ -96,13 +104,10 @@ export default function MealsPage() {
         "
       />
 
-      {/* DARK OVERLAY */}
       <div className="absolute inset-0 bg-black/70"></div>
 
-      {/* CONTENT */}
       <div className="relative z-20 w-full max-w-4xl px-6 pt-10 pb-20">
 
-        {/* HEADER */}
         <h1
           className="
             text-center text-4xl md:text-5xl font-extrabold 
@@ -115,7 +120,6 @@ export default function MealsPage() {
           🥗 Your Meal Options
         </h1>
 
-        {/* PROFILE INFO */}
         <div className="text-center text-gray-300 mb-8">
           <p>
             Goal: <span className="font-semibold text-green-400">{profile.goal}</span>
@@ -124,6 +128,23 @@ export default function MealsPage() {
             Phase: <span className="font-semibold text-green-400">{phase}</span>
           </p>
           <p className="text-sm text-gray-400 mt-1">(Choose 1 meal from each category)</p>
+        </div>
+
+        {/* GENERATE NEW MEALS BUTTON */}
+        <div className="flex justify-center mb-8">
+          <button
+            onClick={() => setRegen((prev) => prev + 1)}
+            className="
+              px-8 py-3 rounded-xl
+              bg-gradient-to-r from-green-600 to-lime-500
+              text-white font-semibold
+              hover:from-green-500 hover:to-lime-400
+              active:scale-95 transition
+              shadow-[0_0_15px_rgba(0,255,120,0.3)]
+            "
+          >
+            🔄 Generate New Meals
+          </button>
         </div>
 
         {/* DIET SWITCH */}
@@ -203,7 +224,6 @@ export default function MealsPage() {
           ))}
         </div>
 
-        {/* BACK BUTTON */}
         <div className="flex justify-center">
           <button
             onClick={() => navigate("/overview")}
