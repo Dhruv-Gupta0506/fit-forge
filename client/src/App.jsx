@@ -8,72 +8,78 @@ import ProgressPage from "./pages/ProgressPage";
 import SuggestWorkoutsPage from "./pages/WorkoutsPage";
 import SuggestMealsPage from "./pages/MealsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop"; // ✅ ADD THIS
 
 function App() {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+    <>
+      {/* 🔥 Global scroll fix */}
+      <ScrollToTop />
 
-      {/* Protected Routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      <Route
-        path="/overview"
-        element={
-          <ProtectedRoute>
-            <OverviewPage />
-          </ProtectedRoute>
-        }
-      />
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/suggest-workouts"
-        element={
-          <ProtectedRoute>
-            <SuggestWorkoutsPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/overview"
+          element={
+            <ProtectedRoute>
+              <OverviewPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/suggest-meals"
-        element={
-          <ProtectedRoute>
-            <SuggestMealsPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/suggest-workouts"
+          element={
+            <ProtectedRoute>
+              <SuggestWorkoutsPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminPanel />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/suggest-meals"
+          element={
+            <ProtectedRoute>
+              <SuggestMealsPage />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/progress"
-        element={
-          <ProtectedRoute>
-            <ProgressPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Default Route */}
-      <Route path="/" element={<LoginPage />} />
-    </Routes>
+        <Route
+          path="/progress"
+          element={
+            <ProtectedRoute>
+              <ProgressPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default Route */}
+        <Route path="/" element={<LoginPage />} />
+      </Routes>
+    </>
   );
 }
 
