@@ -14,7 +14,7 @@ export default function OverviewPage() {
 
   const fetchProfile = async () => {
     try {
-      setLoading(true); // 🔥 FIX
+      setLoading(true);
       const res = await API.get("/user/me");
 
       if (res.data?.user) {
@@ -26,7 +26,7 @@ export default function OverviewPage() {
       console.error("❌ Error fetching profile:", err);
       setProfile(null);
     } finally {
-      setLoading(false); // 🔥 FIX
+      setLoading(false);
     }
   };
 
@@ -61,7 +61,6 @@ export default function OverviewPage() {
   const toggleTodayTask = async (index) => {
     try {
       setLoading(true);
-
       await API.put(`/user/tasks/today/${index}`);
 
       setShowConfetti(true);
@@ -112,6 +111,7 @@ export default function OverviewPage() {
           🏆 Fitness Overview
         </h1>
 
+        {/* ADMIN BUTTON */}
         {profile.email === adminEmail && (
           <button
             onClick={() => navigate("/admin")}
@@ -139,11 +139,24 @@ export default function OverviewPage() {
             <p className="text-gray-300 text-base sm:text-lg">
               {profile.goal} | Level {profile.level} | {profile.points} XP | Streak: {profile.streak} 🔥
             </p>
+
+            {/* ✨ EDIT PROFILE BUTTON (new) */}
+            <button
+              onClick={() => navigate("/dashboard?edit=true")}
+              className="
+                mt-2 px-6 py-2 rounded-xl
+                bg-gradient-to-r from-purple-500 to-blue-600
+                text-white font-semibold text-sm
+                shadow-[0_0_15px_rgba(140,0,255,0.35)]
+                hover:opacity-90 transition
+              "
+            >
+              ✏️ Edit Profile
+            </button>
           </div>
 
           {/* CIRCLES */}
           <div className="flex flex-col sm:flex-row gap-10 sm:gap-14">
-
             {/* BMI CIRCLE */}
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -151,18 +164,10 @@ export default function OverviewPage() {
               style={{ width: size, height: size }}
             >
               <div className="absolute w-full h-full rounded-full blur-2xl bg-purple-500/20 animate-pulse"></div>
-
               <div className="absolute w-[115%] h-[115%] rounded-full animate-spin-slow bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 opacity-30"></div>
 
               <svg width={size} height={size} className="transform -rotate-90 relative z-10">
-                <circle
-                  cx={size / 2}
-                  cy={size / 2}
-                  r={radius}
-                  stroke="rgba(255,255,255,0.15)"
-                  strokeWidth={stroke}
-                  fill="transparent"
-                />
+                <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.15)" strokeWidth={stroke} fill="transparent" />
                 <motion.circle
                   cx={size / 2}
                   cy={size / 2}
@@ -173,19 +178,13 @@ export default function OverviewPage() {
                   strokeDasharray={circumference}
                   strokeLinecap="round"
                   animate={{
-                    strokeDashoffset:
-                      circumference - (bmi / 40) * circumference,
+                    strokeDashoffset: circumference - (bmi / 40) * circumference,
                   }}
                   transition={{ duration: 1.8, ease: "easeOut" }}
                 />
               </svg>
 
-              <motion.div
-                className="absolute text-center z-20"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
+              <motion.div className="absolute text-center z-20" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
                 <motion.p
                   className={`font-bold text-xl ${bmiCategory.color}`}
                   animate={{ scale: [1, 1.1, 1] }}
@@ -204,18 +203,10 @@ export default function OverviewPage() {
               style={{ width: size, height: size }}
             >
               <div className="absolute w-full h-full rounded-full blur-2xl bg-green-500/20 animate-pulse"></div>
-
               <div className="absolute w-[115%] h-[115%] rounded-full animate-spin-slow bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 opacity-30"></div>
 
               <svg width={size} height={size} className="transform -rotate-90 relative z-10">
-                <circle
-                  cx={size / 2}
-                  cy={size / 2}
-                  r={radius}
-                  stroke="rgba(255,255,255,0.15)"
-                  strokeWidth={stroke}
-                  fill="transparent"
-                />
+                <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.15)" strokeWidth={stroke} fill="transparent" />
                 <motion.circle
                   cx={size / 2}
                   cy={size / 2}
@@ -226,19 +217,13 @@ export default function OverviewPage() {
                   strokeDasharray={circumference}
                   strokeLinecap="round"
                   animate={{
-                    strokeDashoffset:
-                      circumference - (completionPercent / 100) * circumference,
+                    strokeDashoffset: circumference - (completionPercent / 100) * circumference,
                   }}
                   transition={{ duration: 1.8, ease: "easeOut" }}
                 />
               </svg>
 
-              <motion.div
-                className="absolute text-center z-20"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
+              <motion.div className="absolute text-center z-20" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
                 <motion.p
                   className="font-bold text-xl text-green-400"
                   animate={{ scale: [1, 1.1, 1] }}
@@ -281,7 +266,7 @@ export default function OverviewPage() {
           </motion.button>
         </div>
 
-        {/* TASKS LIST */}
+        {/* TASK LIST */}
         <div
           className="
             w-full max-w-3xl bg-white/10 backdrop-blur-xl 
