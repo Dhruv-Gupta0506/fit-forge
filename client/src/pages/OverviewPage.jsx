@@ -14,10 +14,19 @@ export default function OverviewPage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await API.get("/user/me"); // cookie-based
-      setProfile(res.data.user); // ✅ FIXED — must access user!
+      setLoading(true); // 🔥 FIX
+      const res = await API.get("/user/me");
+
+      if (res.data?.user) {
+        setProfile(res.data.user);
+      } else {
+        setProfile(null);
+      }
     } catch (err) {
       console.error("❌ Error fetching profile:", err);
+      setProfile(null);
+    } finally {
+      setLoading(false); // 🔥 FIX
     }
   };
 

@@ -4,16 +4,18 @@ import API from "./axios";
 // Register user
 export const registerUser = async (data) => {
   try {
-    const res = await API.post("/auth/register", {
-      name: data.name,
-      email: data.email,
-      password: data.password,
-    });
+    const res = await API.post(
+      "/auth/register",
+      {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      },
+      { withCredentials: true } // important on some browsers
+    );
 
-    console.log("✅ Register response:", res.data);
     return res.data;
   } catch (err) {
-    console.error("❌ Register error:", err.response?.data || err.message);
     return { error: err.response?.data?.message || "Registration failed" };
   }
 };
@@ -21,15 +23,17 @@ export const registerUser = async (data) => {
 // Login user
 export const loginUser = async (data) => {
   try {
-    const res = await API.post("/auth/login", {
-      email: data.email,
-      password: data.password,
-    });
+    const res = await API.post(
+      "/auth/login",
+      {
+        email: data.email,
+        password: data.password,
+      },
+      { withCredentials: true }   // 🔥 REQUIRED FIX
+    );
 
-    console.log("✅ Login response:", res.data);
     return res.data;
   } catch (err) {
-    console.error("❌ Login error:", err.response?.data || err.message);
     return { error: err.response?.data?.message || "Login failed" };
   }
 };

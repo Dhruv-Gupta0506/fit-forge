@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { loginUser } from "../api/auth";
 import { useNavigate, Link } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -8,6 +9,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ REQUIRED so that new user does NOT see old user data
+  const { setUser } = useContext(AuthContext);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,8 +29,11 @@ export default function LoginPage() {
       return;
     }
 
+    // ✅ Save logged-in user to global state
+    setUser(res.user);
+
     // Hard reload to attach cookies properly
-    window.location.href = "/dashboard";
+    window.location.href = "/overview";
   };
 
   return (
@@ -120,8 +127,6 @@ export default function LoginPage() {
               {showPassword ? "🙈" : "👁️"}
             </span>
           </div>
-
-          {/* Removed Forgot Password link */}
 
           <button
             type="submit"

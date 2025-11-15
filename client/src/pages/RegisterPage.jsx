@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { registerUser } from "../api/auth";
 import { useNavigate, Link } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -8,6 +9,9 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ Needed so newly registered user does NOT see old user's data
+  const { setUser } = useContext(AuthContext);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -22,7 +26,10 @@ export default function RegisterPage() {
     if (res.error) {
       setError(res.error);
     } else {
-      // ✔️ New user goes directly to dashboard now
+      // ✅ Save new registered user to global state
+      setUser(res.user);
+
+      // ✔️ New user goes directly to dashboard
       window.location.href = "/dashboard";
     }
 
@@ -32,7 +39,6 @@ export default function RegisterPage() {
   return (
     <div className="relative min-h-screen w-full bg-black overflow-hidden flex items-center justify-center">
 
-      {/* BACKGROUND IMAGE */}
       <img
         src="/register.png"
         alt="Register Background"
@@ -44,14 +50,11 @@ export default function RegisterPage() {
         "
       />
 
-      {/* Lighter overlay to reveal FITFORGE logo */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60"></div>
 
-      {/* Ambient Glows */}
       <div className="absolute left-[8%] bottom-[10%] w-[280px] h-[280px] bg-blue-500/25 blur-[130px]"></div>
       <div className="absolute right-[8%] bottom-[5%] w-[250px] h-[250px] bg-purple-600/25 blur-[140px]"></div>
 
-      {/* REGISTER FORM */}
       <form
         onSubmit={handleSubmit}
         className="
@@ -65,7 +68,6 @@ export default function RegisterPage() {
         "
         style={{ marginTop: "-40px" }}
       >
-        {/* Header */}
         <h2
           className="
             text-3xl sm:text-4xl font-extrabold 
@@ -86,7 +88,6 @@ export default function RegisterPage() {
           </p>
         )}
 
-        {/* NAME */}
         <label className="text-gray-300 text-sm">Full Name</label>
         <input
           name="name"
@@ -102,7 +103,6 @@ export default function RegisterPage() {
           "
         />
 
-        {/* EMAIL */}
         <label className="text-gray-300 text-sm">Email</label>
         <input
           name="email"
@@ -119,7 +119,6 @@ export default function RegisterPage() {
           "
         />
 
-        {/* PASSWORD */}
         <label className="text-gray-300 text-sm">Password</label>
         <div className="relative mb-6">
           <input
@@ -144,7 +143,6 @@ export default function RegisterPage() {
           </span>
         </div>
 
-        {/* BUTTON */}
         <button
           type="submit"
           disabled={loading}

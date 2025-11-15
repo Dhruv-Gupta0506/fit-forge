@@ -7,16 +7,24 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  // Auto-login
+  // Auto-login check
   useEffect(() => {
     const check = async () => {
       try {
+        setLoading(true); // 🔥 IMPORTANT FIX
+
         const res = await API.get("/user/me");
-        setUser(res.data.user);
+
+        if (res.data?.user) {
+          setUser(res.data.user);
+        } else {
+          setUser(null); // 🔥 CRITICAL FIX
+        }
+
       } catch (err) {
-        setUser(null);
+        setUser(null); // 🔥 MUST RESET USER
       } finally {
-        setLoading(false);
+        setLoading(false); // 🔥 MUST UNLOCK RENDER
       }
     };
 
