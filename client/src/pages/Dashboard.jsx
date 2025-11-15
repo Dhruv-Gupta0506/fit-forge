@@ -1,10 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import API from "../api/axios";
+import { AuthContext } from "../context/AuthContext"; // 🔥 ADDED
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { refreshUser } = useContext(AuthContext); // 🔥 ADDED
 
   // Detect editing mode properly
   const isEditing =
@@ -78,12 +81,12 @@ export default function Dashboard() {
     try {
       await API.post("/user/me", profile);
 
+      await refreshUser(); // 🔥 IMPORTANT FIX — refresh global user
+
       if (isEditing) {
-        // 🔥 INSTANT redirect when editing
-        navigate("/overview");
+        navigate("/overview"); // 🔥 instant redirect
       } else {
-        // First-time flow
-        setSaved(true);
+        setSaved(true); // first-time flow
       }
     } catch (err) {
       setError("❌ Failed to save profile.");
@@ -194,6 +197,7 @@ export default function Dashboard() {
                 className="
                   w-full p-3 rounded-xl bg-black/50 border border-gray-600
                   focus:border-blue-400 focus:ring-2 focus:ring-blue-500
+                  appearance-none
                 "
               >
                 <option value="">Select Gender</option>
