@@ -23,10 +23,11 @@ router.post("/register", async (req, res) => {
       name,
       email,
       password,
-      isVerified: true, // always true since no OTP
+      isVerified: true,
     });
 
-    res.json({ message: "Registration successful", user });
+    // ✅ Always return consistent structure
+    res.json({ user });
   } catch (err) {
     console.error("❌ Registration Error:", err);
     res.status(500).json({ message: "Server error" });
@@ -58,7 +59,8 @@ router.post("/login", async (req, res) => {
       maxAge: JWT_EXPIRES,
     });
 
-    res.json({ message: "Login successful", user });
+    // ✅ Consistent response format
+    res.json({ user });
   } catch (err) {
     console.error("❌ Login error:", err);
     res.status(500).json({ message: "Server error" });

@@ -30,7 +30,7 @@ router.get("/me", verifyToken, async (req, res) => {
       await user.save();
     }
 
-    res.status(200).json(user);
+    res.status(200).json({ user }); // ✅ FIXED
   } catch (err) {
     console.error("❌ Error fetching user:", err);
     res.status(500).json({ message: "Server error" });

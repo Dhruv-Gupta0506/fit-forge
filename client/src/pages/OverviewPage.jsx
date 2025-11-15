@@ -14,8 +14,8 @@ export default function OverviewPage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await API.get("/user/me"); // 🔥 cookie-based
-      setProfile(res.data);
+      const res = await API.get("/user/me"); // cookie-based
+      setProfile(res.data.user); // ✅ FIXED — must access user!
     } catch (err) {
       console.error("❌ Error fetching profile:", err);
     }
@@ -53,7 +53,7 @@ export default function OverviewPage() {
     try {
       setLoading(true);
 
-      await API.put(`/user/tasks/today/${index}`); // 🔥 cookie-based
+      await API.put(`/user/tasks/today/${index}`);
 
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
