@@ -13,12 +13,11 @@ app.use(express.json());
 app.use(cookieParser());
 
 // -------------------------------------------------------------
-// ALLOWED ORIGINS (YOUR TWO VERCEL DOMAINS + LOCALHOST)
+// ALLOWED ORIGINS (ONLY 1 VERCEL URL + LOCALHOST)
 // -------------------------------------------------------------
 const allowedOrigins = [
-  process.env.CLIENT_URL?.trim(),
-  process.env.CLIENT_URL1?.trim(),
-  "http://localhost:5173",
+  process.env.CLIENT_URL?.trim(),   // your main Vercel domain
+  "http://localhost:5173"           // for development
 ].filter(Boolean);
 
 console.log("🔵 Allowed Origins:", allowedOrigins);
