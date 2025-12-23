@@ -16,10 +16,11 @@
 
 ## 📸 Screenshots
 
-![login](https://github.com/user-attachments/assets/899564aa-c631-4847-b3c4-29c2a1a2286e)
-![workout](https://github.com/user-attachments/assets/3fa69470-9543-400b-a8ac-71c3a45247df)
-![dashboard](https://github.com/user-attachments/assets/d95ae718-72bf-4911-a9f1-69ef03750cd8)
-
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/899564aa-c631-4847-b3c4-29c2a1a2286e" width="32%" />
+  <img src="https://github.com/user-attachments/assets/3fa69470-9543-400b-a8ac-71c3a45247df" width="32%" />
+  <img src="https://github.com/user-attachments/assets/d95ae718-72bf-4911-a9f1-69ef03750cd8" width="32%" />
+</div>
 
 ---
 
